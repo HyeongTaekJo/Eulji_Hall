@@ -32,6 +32,9 @@ app.post('/', (req, res) => {
 app.use('/users', require('./routes/users')) 
 
 
+
+
+
 //에러 처리기(에러가 발생하면 서버가 다운되지 않도록 하는 것)
 app.use((error,req,res,next) => {
     res.status(error.status || 500);
@@ -41,5 +44,5 @@ app.use((error,req,res,next) => {
 app.use(express.static(path.join(__dirname, '../uploads')));
 
 app.listen(port, () => {
-    console.log('Server is running on port 4000');
+    console.log('Server is running on port 5000');
 });

@@ -3,6 +3,7 @@ import axiosInstance from '../../utils/axios';
 import { logoutUser } from '../../store/thunkFunctions';
 import {  useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux';
+import Button from '@mui/material/Button';
 
 const LandingPage = () => {
 
@@ -26,7 +27,10 @@ const LandingPage = () => {
       <button onClick={handleLogout}>
         로그아웃
       </button>
+      
     </div>
+
+    
   )
 }
 

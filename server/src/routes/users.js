@@ -37,6 +37,8 @@ router.get('/auth', auth, async(req, res) => { //auth 미들웨어를 통과한�
     })
 });
 
+//만일 userSlice에 userData에 없는 변수가 있으면 가져오더라도 리덕스 store에 저장이 안되므로 userData에 변수를 선언해줘야 한다.
+
 
 // 로그인
 router.post('/login', async(req, res, next) => {

@@ -1,6 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../utils/axios';
 
+//createAsyncThunk로 만든것은 알아서 extraReducers를 찾아서 결과를 반환한다.
+
 export const registerUser = createAsyncThunk(
     "user/registerUser",
     async (body,thunkAPI) => {
