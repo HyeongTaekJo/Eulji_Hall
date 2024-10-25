@@ -20,12 +20,12 @@ const NAVIGATION = [
   },
   {
     segment: 'dashboard',
-    title: 'Dashboard',
+    title: '대쉬보드',
     icon: <DashboardIcon />,
   },
   {
     segment: 'orders',
-    title: 'Orders',
+    title: '주문',
     icon: <ShoppingCartIcon />,
   },
   {
@@ -58,6 +58,18 @@ const NAVIGATION = [
     icon: <LayersIcon />,
   },
 ];
+
+// preview-start
+const BRANDING = {
+    logo: (
+      <img
+        src={`${process.env.PUBLIC_URL}/mark.jpg`}
+        alt="mark logo"
+        style={{ height: 100 }}
+      />
+    ),
+    title: '을',
+  };
 
 const demoTheme = createTheme({
   cssVariables: {
@@ -131,6 +143,7 @@ function Dashboard(props) {
   return (
     // preview-start
     <AppProvider
+      branding={BRANDING}
       session={session}
       authentication={authentication}
       navigation={NAVIGATION}

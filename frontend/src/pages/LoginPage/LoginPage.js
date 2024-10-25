@@ -2,8 +2,141 @@ import React from 'react'
 import {useDispatch} from "react-redux";
 import { useForm } from "react-hook-form";
 import { loginUser } from '../../store/thunkFunctions';
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  TextField,
+  InputAdornment,
+  Link,
+  IconButton,
+} from '@mui/material';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { AppProvider } from '@toolpad/core/AppProvider';
+import { SignInPage } from '@toolpad/core/SignInPage';
+import { useTheme } from '@mui/material/styles';
+
+const providers = [{ id: 'credentials', name: 'Email and Password' }];
+
+// preview-start
+const BRANDING = {
+  logo: (
+    <img
+      src={`${process.env.PUBLIC_URL}/mark.jpg`}
+      alt="mark logo"
+      style={{ height: 100 }}
+    />
+  ),
+  // title: 'MUI',
+};
+// preview-end
+
+
+function CustomEmailField() {
+  return (
+    <TextField
+      id="input-with-icon-textfield"
+      label="이메일"
+      name="email"
+      type="email"
+      size="small"
+      required
+      fullWidth
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <AccountCircle fontSize="inherit" />
+            </InputAdornment>
+          ),
+        },
+      }}
+      variant="outlined"
+    />
+  );
+}
+
+function CustomPasswordField() {
+  const [showPassword, setShowPassword] = React.useState(false);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+
+  return (
+    <FormControl sx={{ my: 2 }} fullWidth variant="outlined">
+      <InputLabel size="small" htmlFor="outlined-adornment-password">
+        비밀번호
+      </InputLabel>
+      <OutlinedInput
+        id="outlined-adornment-password"
+        type={showPassword ? 'text' : 'password'}
+        name="password"
+        size="small"
+        endAdornment={
+          <InputAdornment position="end">
+            <IconButton
+              aria-label="toggle password visibility"
+              onClick={handleClickShowPassword}
+              onMouseDown={handleMouseDownPassword}
+              edge="end"
+              size="small"
+            >
+              {showPassword ? (
+                <VisibilityOff fontSize="inherit" />
+              ) : (
+                <Visibility fontSize="inherit" />
+              )}
+            </IconButton>
+          </InputAdornment>
+        }
+        label="Password"
+      />
+    </FormControl>
+  );
+}
+
+function CustomButton(onClick ) {
+  return (
+    <Button
+      type="submit"
+      variant="outlined"
+      color="info"
+      size="small"
+      disableElevation
+      fullWidth
+      sx={{ my: 2 }}
+      onClick={onclick}
+    >
+      로그인
+    </Button>
+  );
+}
+
+function SignUpLink() {
+  return (
+    <Link href="/" variant="body2">
+      회원가입
+    </Link>
+  );
+}
+
+function ForgotPasswordLink() {
+  return (
+    <Link href="/" variant="body2">
+      비밀번호 찾기
+    </Link>
+  );
+}
 
 const LoginPage = () => {
+  const theme = useTheme();
+
   const { 
     register, 
     handleSubmit, //확인 버튼 눌렀을 때 실행되는 것
@@ -25,60 +158,32 @@ const LoginPage = () => {
     reset();
   }
 
-  const userEmail = {
-    required : '필수 필드입니다.',
-  }
-  
-  const userPassword = {
-    required : '필수 필드입니다.',
-    minLength : { value : 6, message : '6자 이상 입력하세요.'},
-  }
 
   return (
+    
     <div style={{
       display: 'flex', justifyContent: 'center' , alignItems: 'center',
       width: '100%', height: '100vh'
     }}>
-      <form style={{display: 'flex', flexDirection:'column'}}
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <label
-           htmlFor='email'
-        >Email</label>
-        <input 
-          type='email' 
-          id='email'
-          {...register('email',userEmail)}
-        />
-         { //유효성 검사 후, 나타나는 부분
-          errors?.email && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.email.message} 
-            </span>
-          </div>  
+
+      <AppProvider branding={BRANDING} theme={theme}>
+        <SignInPage
+          signIn={(provider, formData) =>
+            handleSubmit(onSubmit({ email: formData.get('email'), password: formData.get('password') })
+            //`Signing in with "${provider.name}" and credentials: ${formData.get('email')}, ${formData.get('password')}`,
+            )
           }
-        <label
-           htmlFor='email'
-        >Password</label>
-        <input 
-          type="password"
-          id='password'
-          {...register('password',userPassword)}
+          slots={{
+            emailField: CustomEmailField,           //이메일
+            passwordField: CustomPasswordField,     //비밀번호
+            submitButton: CustomButton,             //로그인 버튼
+            signUpLink: SignUpLink,                 //회원가입 버튼
+            forgotPasswordLink: ForgotPasswordLink, //비밀번호찾기
+          }}
+          providers={providers}
         />
-        { //유효성 검사 후, 나타나는 부분
-          errors?.password && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.password.message} 
-            </span>
-          </div>  
-        }
-        <br/>
-        <button type='submit'>
-          Login
-        </button>
-      </form>
+      </AppProvider>
+      
     </div>
   )
 }
