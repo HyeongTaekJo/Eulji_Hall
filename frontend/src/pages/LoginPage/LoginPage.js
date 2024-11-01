@@ -25,9 +25,9 @@ const providers = [{ id: 'credentials', name: 'Email and Password' }];
 const BRANDING = {
   logo: (
     <img
-      src={`${process.env.PUBLIC_URL}/mark.jpg`}
+      src={`${process.env.PUBLIC_URL}/joyfactory_ci.png`}
       alt="mark logo"
-      style={{ height: 100 }}
+      style={{ height: '30px', width: 'auto' }} // 높이는 80px, 너비는 자동으로 조정
     />
   ),
   // title: 'MUI',

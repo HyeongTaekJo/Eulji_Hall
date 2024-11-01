@@ -47,13 +47,13 @@ router.post('/login', async(req, res, next) => {
        const user = await User.findOne({email: req.body.email});
 
        if(!user){
-        return res.status(400).send("Auth failed, eamil not found");
+        return res.status(400).send("이메일이 존재하지 않습니다.");
        }
 
        //비밀번호가 올바른 것인지 체크
        const isMatch = await user.comparePassword(req.body.password); //comparePassword는 모델에 있는 거
        if(!isMatch)
-         return res.status(400).send("Wrong password");
+         return res.status(400).send("잘못된 비밀번호 입니다.");
 
        const payload = { //몽고 DB 컬렉션 데이터 ID
             userId: user._id.toString(),

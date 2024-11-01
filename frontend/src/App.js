@@ -13,6 +13,7 @@ import ProtectedRoutes from './components/ProtectedRoutes';
 import NotAuthRoutes from './components/NotAuthRoutes';
 import NavBar from './layout/NavBar/NavBar';
 import Dashboard from './layout/Dashboard/Dashboard';
+import ReservationListPage from './pages/ReservationListPage/ReservationListPage';
 
 function Layout() {
   return(  //flex-col은 Navbar, main, Footer가 세로로 한줄씩 된다 수직, 가로 축이 바뀜
@@ -64,6 +65,7 @@ function App() {
         <Route element={<NotAuthRoutes isAuth={isAuth}/>}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reservationList" element={<ReservationListPage daysAgo="14" title="선술집 연" date="11.15" time="금 오후 8:00" type="룸" />} />
         </Route>
       </Route>
     </Routes>

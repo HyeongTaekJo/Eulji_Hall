@@ -3,6 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 
 /* eslint-disable react/prop-types */
 const NotAuthRoutes = ({isAuth}) => {
+  //console.log('NotAuthRoutes' + isAuth )
   return (
     //isAuth가 true Navigate, 아니면 Outlet
     isAuth ? <Navigate to={'/'} /> : <Outlet/>
