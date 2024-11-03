@@ -54,7 +54,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         {/* 예약하기,예약내역죠회 */}
-        <Route index element={<LandingPage />} /> 
+        <Route index element={<LandingPage />} />
+        <Route path="/reservationList" element={<ReservationListPage  />} />
 
         {/* 로그인한 사람만 갈 수 있는 경로 */}
         <Route element={<ProtectedRoutes isAuth={isAuth}/>}>
@@ -65,7 +66,6 @@ function App() {
         <Route element={<NotAuthRoutes isAuth={isAuth}/>}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/reservationList" element={<ReservationListPage daysAgo="14" title="선술집 연" date="11.15" time="금 오후 8:00" type="룸" />} />
         </Route>
       </Route>
     </Routes>

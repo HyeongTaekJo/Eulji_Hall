@@ -16,6 +16,9 @@ import { useState } from 'react';
 import { useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { authUser, logoutUser } from '../../store/thunkFunctions';
+import DateRangeIcon from '@mui/icons-material/DateRange';
+import HistoryIcon from '@mui/icons-material/History';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const NAVIGATION = [
   {
@@ -25,17 +28,17 @@ const NAVIGATION = [
   {
     segment: '',
     title: '예약하기',
-    icon: <DashboardIcon />,
+    icon: <DateRangeIcon />,
   },
   {
     segment: 'reservationList',
     title: '예약내역 확인',
-    icon: <ShoppingCartIcon />,
+    icon: <HistoryIcon />,
   },
   {
     segment: 'register',
     title: '회원가입',
-    icon: <ShoppingCartIcon />,
+    icon: <PersonAddIcon />,
   },
   {
     kind: 'divider',
@@ -205,7 +208,6 @@ function Dashboard(props) {
     >
       <DashboardLayout defaultSidebarCollapsed>
         <Outlet />
-        
       </DashboardLayout>
     </AppProvider>
     // preview-end
