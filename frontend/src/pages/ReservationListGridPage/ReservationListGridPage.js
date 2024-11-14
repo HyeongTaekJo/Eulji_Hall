@@ -4,6 +4,30 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchReservations, updateReservation } from '../../store/reservationThunks';
 import DatePicker from 'react-datepicker';  // react-datepicker 임포트
 import "react-datepicker/dist/react-datepicker.css";  // 스타일 추가
+import { FaExclamationCircle } from 'react-icons/fa'; // React Icons 라이브러리
+
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    color: '#6c757d',
+    backgroundColor: '#f8f9fa',
+    border: '1px solid #dee2e6',
+    borderRadius: '8px',
+    padding: '20px',
+  },
+  icon: {
+    fontSize: '2rem',
+    marginBottom: '10px',
+  },
+  text: {
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
+  },
+};
 
 const getTodayInKST = () => {
   const kstOffset = 9 * 60 * 60 * 1000; // KST는 UTC+9
@@ -18,6 +42,7 @@ const ReservationListGridPage = () => {
   const [startDate, setStartDate] = useState(getTodayInKST()); // 오늘 날짜
   const [endDate, setEndDate] = useState(getTodayInKST()); // 오늘 날짜
   const [statusFilter, setStatusFilter] = useState('예약'); // 초기값은 '예약'
+  const [isSaved, setIsSaved] = useState(false); // 저장 상태 추가
   const pageSize = 5;
 
   const [modifiedReservations, setModifiedReservations] = useState({});
@@ -34,8 +59,9 @@ const ReservationListGridPage = () => {
   };
 
   useEffect(() => {
-    dispatch(fetchReservations());
-  }, [dispatch, reservations]);
+    dispatch(fetchReservations({startDate, endDate, statusFilter,isSaved})).then(() => {
+    });
+  }, [dispatch,startDate,endDate,statusFilter,isSaved]);
 
   const handleFieldChange = (id, field, value) => {
     setModifiedReservations((prev) => ({
@@ -63,7 +89,9 @@ const ReservationListGridPage = () => {
     const modifiedData = modifiedReservations[id];
     if (!modifiedData || !modifiedData.isModified) return;
 
-    dispatch(updateReservation({ id, body: modifiedData }));
+    dispatch(updateReservation({ id, body: modifiedData })).then(() => {
+      setIsSaved((prev) => !prev); // 저장 상태를 토글하여 useEffect 트리거
+    });
 
     setModifiedReservations((prev) => ({
       ...prev,
@@ -94,7 +122,12 @@ const ReservationListGridPage = () => {
 
   const renderRows = () => {
     if (!reservations || reservations.length === 0) {
-      return <div>데이터가 없습니다</div>;
+      return (
+        <div style={styles.container}>
+          <FaExclamationCircle style={styles.icon} />
+          <p style={styles.text}>데이터가 없습니다</p>
+        </div>
+      );
     }
 
     const start = currentPage * pageSize;
@@ -132,32 +165,60 @@ const ReservationListGridPage = () => {
               value={modifiedRow.affiliation || row.affiliation} 
               onChange={(e) => handleFieldChange(row._id, 'affiliation', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white', // 수정 불가능하면 흐릿한 배경
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text', // 수정 불가능하면 커서를 막음
+                color: row.status !== '예약' ? '#a0a0a0' : 'black' // 수정 불가능하면 글자 색을 흐리게
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <input 
               type="text" 
               value={modifiedRow.rank || row.rank} 
               onChange={(e) => handleFieldChange(row._id, 'rank', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <input 
               type="text" 
               value={modifiedRow.name || row.name} 
               onChange={(e) => handleFieldChange(row._id, 'name', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell" style={{ flex: '0.5' }}>
             <input 
               type="number" 
               value={modifiedRow.peopleCount || row.peopleCount} 
               onChange={(e) => handleFieldChange(row._id, 'peopleCount', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <input 
               type="date" 
@@ -165,24 +226,45 @@ const ReservationListGridPage = () => {
               onChange={(e) => handleFieldChange(row._id, 'date', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
               min={new Date().toISOString().split('T')[0]} // 오늘 이후 날짜만 선택 가능
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <input 
               type="time" 
               value={modifiedRow.time || row.time} 
               onChange={(e) => handleFieldChange(row._id, 'time', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <input 
               type="text" 
               value={modifiedRow.contact || row.contact} 
               onChange={(e) => handleFieldChange(row._id, 'contact', e.target.value)}
               className={`edit-input ${isModified ? 'modified' : ''}`}
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'text',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             />
           </div>
+
           <div className="grid-cell">
             <div className="menu-checkboxes">
               {allMenuItems.map((menuItem) => (
@@ -191,17 +273,28 @@ const ReservationListGridPage = () => {
                     type="checkbox" 
                     checked={currentMenu.includes(menuItem)}
                     onChange={(e) => handleMenuChange(row._id, menuItem, e.target.checked)}
+                    disabled={row.status !== '예약'}
+                    style={{
+                      cursor: row.status !== '예약' ? 'not-allowed' : 'pointer',
+                    }}
                   />
                   {menuItem}
                 </label>
               ))}
             </div>
           </div>
+
           <div className="grid-cell">
             <select
               value={modifiedRow.tableType || row.tableType}
               onChange={(e) => handleFieldChange(row._id, 'tableType', e.target.value)}
               className="status-select"
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'pointer',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
             >
               {tableOptions.map((option) => (
                 <option key={option} value={option}>

@@ -16,8 +16,24 @@ router.post('/create', async (req, res, next) => {
 // 예약 목록 조회
 router.get('/', async (req, res, next) => {
   try {
-    const reservations = await Reservation.find({}).sort({ date: -1 }); // 날짜 기준 내림차순 정렬
-    //console.log('reservations-->', reservations);
+    const { startDate, endDate, statusFilter } = req.query;
+    // console.log(`startDate->` + startDate);
+    // console.log(`endDate->` + endDate);
+    // console.log(`statusFilter->` + statusFilter);
+
+    // 필터링 조건을 기반으로 쿼리 작성
+    const filterConditions = {};
+
+    if (startDate && endDate) {
+      filterConditions.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
+    }
+
+    if (statusFilter && statusFilter !== '전체') {
+      filterConditions.status = statusFilter;
+    }
+
+    // 조건에 맞는 예약 목록 조회
+    const reservations = await Reservation.find(filterConditions).sort({ date: -1 });
     return res.json(reservations);
   } catch (error) {
     next(error);

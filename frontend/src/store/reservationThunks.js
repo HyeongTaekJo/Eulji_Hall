@@ -21,11 +21,12 @@ export const createReservation = createAsyncThunk(
 // 예약 목록 조회
 export const fetchReservations = createAsyncThunk(
     'reservation/fetchReservations',
-    async (_, thunkAPI) => {
+    async ({ startDate, endDate, statusFilter }, thunkAPI) => {
         try {
-            const response = await axiosInstance.get('/reservations');
-            //console.log('response', response)
-            return response.data; // action.payload
+            const response = await axiosInstance.get('/reservations', {
+                params: { startDate, endDate, statusFilter } // 필터링 파라미터 전달
+            });
+            return response.data; // 필터링된 예약 목록을 반환
         } catch (err) {
             console.log(err);
             return thunkAPI.rejectWithValue(err.response.data || err.message);

@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css"; // Import CSS for date picker
 
+
 const FormContainer = styled.div`
   max-width: 700px;
   width: 80%;
@@ -129,6 +130,26 @@ const TableButton = styled.button`
   }
 `;
 
+const MenuButtonGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+`;
+
+const MenuButton = styled.button`
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: ${({ selected }) => (selected ? '#007bff' : '#f8f9fa')};
+  color: ${({ selected }) => (selected ? '#fff' : '#007bff')};
+  cursor: pointer;
+  
+  &:hover {
+    background-color: ${({ selected }) => (selected ? '#0056b3' : '#e9f7ff')};
+  }
+`;
+
 
 
 const generateTimeOptions = () => {
@@ -151,9 +172,11 @@ const generateTimeOptions = () => {
 };
 
 const ReservationForm = () => {
-  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger  } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const watchMenu = watch("menu", []); // "menu" 필드를 watch하여 선택된 메뉴 확인
+
 
   const today = new Date();
   const watchTableType = watch("tableType", "");
@@ -178,6 +201,14 @@ const ReservationForm = () => {
       formattedDate = newDate.toISOString().split('T')[0]; // 'yyyy-MM-dd' 형식으로 변환
     }
 
+      // menu가 문자열인 경우, 쉼표(,)를 기준으로 나누어 배열로 변환
+      let processedMenu = [];
+      if (typeof menu === 'string') {
+        processedMenu = menu.split(',').map(item => item.trim()); // 쉼표로 나누고 공백 제거
+      } else if (Array.isArray(menu)) {
+        processedMenu = menu; // 이미 배열이라면 그대로 사용
+      }
+
   
     let body = {
       affiliation,
@@ -186,7 +217,7 @@ const ReservationForm = () => {
       contact: fullContact,
       tableType,
       peopleCount,
-      menu,
+      menu: processedMenu, // 배열로 변환된 메뉴
       date: formattedDate,
       time: reservationTime,
       status: '예약'
@@ -212,6 +243,22 @@ const ReservationForm = () => {
         toast.error('예약 실패. 다시 시도해 주세요.');
       });
   };
+
+
+  
+  const handleMenuClick = (menuItem, e) => {
+    e.preventDefault(); // 폼 제출을 막음
+  
+    const currentMenu = watchMenu.includes(menuItem)
+      ? watchMenu.filter(item => item !== menuItem) // 이미 선택된 항목은 제거
+      : [...watchMenu, menuItem]; // 선택되지 않은 항목은 추가
+  
+    setValue("menu", currentMenu); // "menu" 필드 값 업데이트
+  
+    trigger('menu'); // 유효성 검사 트리거
+  };
+
+  
   return (
     <FormContainer>
       <Title>예약 시스템</Title>
@@ -243,10 +290,30 @@ const ReservationForm = () => {
 
         <Label>테이블 선택:</Label>
         <TableButtonGroup>
-          <TableButton type="button" selected={watchTableType === "홀"} onClick={() => setValue("tableType", "홀")}>홀</TableButton>
-          <TableButton type="button" selected={watchTableType === "룸"} onClick={() => setValue("tableType", "룸")}>룸</TableButton>
+          <TableButton
+            type="button"
+            selected={watchTableType === "홀"}
+            onClick={() => {
+              setValue("tableType", "홀");
+              trigger('tableType');  // 유효성 검사 트리거
+            }}
+            {...register('tableType', { required: '테이블을 선택해주세요' })}
+          >
+            홀
+          </TableButton>
+          <TableButton
+            type="button"
+            selected={watchTableType === "룸"}
+            onClick={() => {
+              setValue("tableType", "룸");
+              trigger('tableType');  // 유효성 검사 트리거
+            }}
+            {...register('tableType', { required: '테이블을 선택해주세요' })}
+          >
+            룸
+          </TableButton>
         </TableButtonGroup>
-        {errors.tableType && <ErrorMessage>테이블을 선택해주세요.</ErrorMessage>}
+        {errors.tableType && <ErrorMessage>{errors.tableType.message}</ErrorMessage>}
 
         <Label>인원 수:</Label>
         <Select {...register('peopleCount', { required: '인원 수를 선택해주세요' })}>
@@ -258,11 +325,18 @@ const ReservationForm = () => {
         {errors.peopleCount && <ErrorMessage>{errors.peopleCount.message}</ErrorMessage>}
 
         <Label>메뉴:</Label>
-        <div>
-          <input type="checkbox" {...register('menu', { required: '최소 한 가지 메뉴를 선택해주세요' })} value="돼지고기" /> 돼지고기
-          <input type="checkbox" {...register('menu')} value="소고기" /> 소고기
-          <input type="checkbox" {...register('menu')} value="회" /> 회
-        </div>
+        <MenuButtonGroup>
+          {["돼지고기", "소고기", "회"].map((menuItem) => (
+            <MenuButton
+              key={menuItem}
+              selected={watchMenu.includes(menuItem)} // Check if the menu item is selected
+              onClick={(e) => handleMenuClick(menuItem, e)} // Handle click to toggle selection
+              {...register('menu', { required: '메뉴를 선택해주세요' })} // register 사용
+            >
+              {menuItem}
+            </MenuButton>
+          ))}
+        </MenuButtonGroup>
         {errors.menu && <ErrorMessage>{errors.menu.message}</ErrorMessage>}
 
         <Label>예약일자:</Label>
@@ -273,7 +347,7 @@ const ReservationForm = () => {
           rules={{ required: '예약일자를 선택해주세요' }} // 필수 입력 규칙 추가
           render={({ field }) => (
             <DatePicker
-              {...field} // react-hook-form의 field 값 연동
+            {...register("reservationDate", { required: '예약일자를 선택해주세요' })} // register로 필드 연결
               selected={field.value} // DatePicker에 선택된 값 전달
               onChange={(date) => {
                 field.onChange(date); // react-hook-form의 상태 업데이트
