@@ -8,7 +8,6 @@ import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css"; // Import CSS for date picker
 
-
 const FormContainer = styled.div`
   max-width: 700px;
   width: 80%;
@@ -19,24 +18,37 @@ const FormContainer = styled.div`
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   background-color: #fff;
 
-  @media (max-width: 768px) {
-    max-width: 500px;
-  }
 
   @media (max-width: 576px) {
-    max-width: 100%;
-    padding: 15px;
+    max-width: 330px;
+  width: 100%;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
   }
 `;
 
 const Title = styled.h2`
   text-align: center;
   margin-bottom: 20px;
+  font-size: 1.5rem;
+
+  @media (max-width: 576px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const Label = styled.label`
   display: block;
   margin-top: 10px;
+  font-size: 1rem;
+
+  @media (max-width: 576px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const Input = styled.input`
@@ -45,14 +57,19 @@ const Input = styled.input`
   margin-top: 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 1rem;
+
+  @media (max-width: 576px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const SmallInput = styled(Input)`
   flex-grow: 1;
   margin-right: 5px;
-  
+
   @media (max-width: 576px) {
-    width: auto;
+      font-size: 0.9rem;
   }
 `;
 
@@ -62,6 +79,11 @@ const Select = styled.select`
   margin-top: 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 1rem;
+
+  @media (max-width: 576px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const Button = styled.button`
@@ -72,11 +94,15 @@ const Button = styled.button`
   border-radius: 4px;
   background-color: #007bff;
   color: #fff;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
-  
+
   &:hover {
     background-color: #0056b3;
+  }
+
+  @media (max-width: 576px) {
+    font-size: 0.9rem;
   }
 `;
 
@@ -86,10 +112,8 @@ const ErrorMessage = styled.p`
   margin-top: 5px;
 `;
 
-// 날짜 선택기 스타일
 const CustomDatePicker = styled.input`
   padding: 10px 15px;
- 
   border: 1px solid #ddd;
   border-radius: 4px;
   width: 130px;
@@ -97,16 +121,21 @@ const CustomDatePicker = styled.input`
   color: #333;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
   height: 35px;
-  
+
   &:focus {
     border-color: #007bff;
-    background-color: #e9f7ff; /* 포커스 시 배경색 변경 */
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* 포커스 시 그림자 추가 */
+    background-color: #e9f7ff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
   }
 
   &::-webkit-calendar-picker-indicator {
     opacity: 0.8;
-    cursor: pointer; /* 캘린더 아이콘 커서 */
+    cursor: pointer;
+  }
+
+  @media (max-width: 576px) {
+    width: 100%;
+    font-size: 0.9rem;
   }
 `;
 
@@ -114,6 +143,7 @@ const TableButtonGroup = styled.div`
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap;
 `;
 
 const TableButton = styled.button`
@@ -124,9 +154,14 @@ const TableButton = styled.button`
   background-color: ${({ selected }) => (selected ? '#007bff' : '#f8f9fa')};
   color: ${({ selected }) => (selected ? '#fff' : '#007bff')};
   cursor: pointer;
-  
+
   &:hover {
     background-color: ${({ selected }) => (selected ? '#0056b3' : '#e9f7ff')};
+  }
+
+  @media (max-width: 576px) {
+    flex: 1 1 48%;
+    font-size: 0.9rem;
   }
 `;
 
@@ -135,6 +170,7 @@ const MenuButtonGroup = styled.div`
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
+
 `;
 
 const MenuButton = styled.button`
@@ -144,9 +180,14 @@ const MenuButton = styled.button`
   background-color: ${({ selected }) => (selected ? '#007bff' : '#f8f9fa')};
   color: ${({ selected }) => (selected ? '#fff' : '#007bff')};
   cursor: pointer;
-  
+
   &:hover {
     background-color: ${({ selected }) => (selected ? '#0056b3' : '#e9f7ff')};
+  }
+
+  @media (max-width: 576px) {
+    flex: 1; /* 모바일 화면에서도 버튼이 한 줄로 나타나도록 설정 */
+    font-size: 0.8rem;
   }
 `;
 

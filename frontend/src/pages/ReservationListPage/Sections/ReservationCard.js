@@ -4,6 +4,44 @@ import EditIcon from '@mui/icons-material/Edit';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useDispatch } from 'react-redux';
 import { deleteReservation, fetchReservationList, fetchReservations } from '../../../store/reservationThunks';
+import styled from 'styled-components';
+
+const StyledCard = styled(Card)`
+  width: 450px;
+  height: auto;
+  border: 1px solid #1976d2;
+  border-radius: 8px;
+  margin: 16px auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+
+  @media (max-width: 576px) {
+    width: 90%;
+    padding: 10px;
+  }
+`;
+
+const StatusLabel = styled(Typography)`
+  background-color: #1976d2;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+`;
+
+const CardContentCenter = styled(CardContent)`
+  padding: 0;
+  text-align: center;
+  margin-bottom: 3px;
+`;
+
+const CardContentAligned = styled(CardContent)`
+  padding: 0 16px;
+  text-align: center;
+`;
 
 const ReservationCard = ({ 
   status = "예약", 
@@ -50,30 +88,18 @@ const ReservationCard = ({
 
   return (
     <>
-      <Card 
-        style={{ 
-          width: '450px', 
-          height: '300px', 
-          border: '1px solid #1976d2', 
-          borderRadius: '8px', 
-          margin: '16px auto', 
-          padding: '16px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'center' 
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-          <Typography variant="caption" style={{ backgroundColor: '#1976d2', color: '#fff', borderRadius: '8px', padding: '4px 8px', fontSize: '0.9rem' }}>
+      <StyledCard>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2px' }}>
+          <StatusLabel variant="caption">
             {daysLabel}
-          </Typography>
+          </StatusLabel>
         </div>
 
-        <CardContent style={{ padding: 0, textAlign: 'center', marginBottom: '8px' }}>
+        <CardContentCenter>
           <Typography variant="h6" style={{ fontWeight: 'bold', fontSize: '1.25rem' }}>{status}</Typography>
-        </CardContent>
+        </CardContentCenter>
 
-        <CardContent style={{ padding: '0 16px', textAlign: 'center' }}>
+        <CardContentAligned>
           <Typography variant="body2" color="textSecondary" style={{ fontSize: '1rem' }}>
             소속: {affiliation} | 계급: {rank} | 성명: {name}
           </Typography>
@@ -113,8 +139,8 @@ const ReservationCard = ({
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </CardContentAligned>
+      </StyledCard>
 
       {/* Confirmation Dialog */}
       <Dialog

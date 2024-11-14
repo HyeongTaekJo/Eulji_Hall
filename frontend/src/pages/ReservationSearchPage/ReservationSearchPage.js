@@ -35,22 +35,22 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  width: 53%;
+  width: 100%;
   padding: 8px;
   margin-top: 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
 
   @media (max-width: 576px) {
-    width: 80%;  /* 화면 크기가 576px 이하일 때 width를 80%로 변경 */
+    width: 100%;  /* 화면 크기가 576px 이하일 때 width를 80%로 변경 */
   }
 `;
 const SmallInput = styled(Input)`
-  width: 110px;  // 넓이를 늘림
+  flex-grow: 1;
   margin-right: 5px;
 
   @media (max-width: 576px) {
-    width: 100px;  // 작은 화면에서 좁게 설정
+      font-size: 0.9rem;
   }
 `;
 
