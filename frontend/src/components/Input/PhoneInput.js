@@ -3,17 +3,17 @@ import PropTypes from 'prop-types';
 import { Input as BaseInput } from '@mui/base/Input';
 import { Box, styled } from '@mui/system';
 
-function PhoneNumberInput({ separator, lengths, value, onChange }) {
+const PhoneNumberInput = React.forwardRef(({ separator, lengths, value, onChange }, ref) => {
   const inputRefs = React.useRef(new Array(lengths.reduce((a, b) => a + b, 0)).fill(null));
 
   const focusInput = (targetIndex) => {
     const targetInput = inputRefs.current[targetIndex];
-    targetInput.focus();
+    if (targetInput) targetInput.focus();
   };
 
   const selectInput = (targetIndex) => {
     const targetInput = inputRefs.current[targetIndex];
-    targetInput.select();
+    if (targetInput) targetInput.select();
   };
 
   const handleKeyDown = (event, currentIndex) => {
@@ -103,6 +103,7 @@ function PhoneNumberInput({ separator, lengths, value, onChange }) {
               <BaseInput
                 key={inputIndexGlobal}
                 slots={{ input: InputElement }}
+                required={true}
                 aria-label={`Digit ${inputIndexGlobal + 1} of phone number`}
                 slotProps={{
                   input: {
@@ -124,7 +125,7 @@ function PhoneNumberInput({ separator, lengths, value, onChange }) {
       ))}
     </Box>
   );
-}
+});
 
 PhoneNumberInput.propTypes = {
   lengths: PropTypes.arrayOf(PropTypes.number).isRequired,
@@ -133,7 +134,7 @@ PhoneNumberInput.propTypes = {
   value: PropTypes.string.isRequired,
 };
 
-export default function PhoneInput() {
+const PhoneInput = React.forwardRef((props, ref) => {
   const [phoneNumber, setPhoneNumber] = React.useState('');
 
   return (
@@ -143,35 +144,25 @@ export default function PhoneInput() {
         value={phoneNumber} 
         onChange={setPhoneNumber} 
         lengths={[3, 4, 4]} 
+        ref={ref} // ref 전달
+        required={true}
       />
     </Box>
   );
-}
+});
+
+export default PhoneInput;
 
 const blue = {
-  100: '#DAECFF',
-  200: '#80BFFF',
-  400: '#3399FF',
-  500: '#007FFF',
-  600: '#0072E5',
-  700: '#0059B2',
+  // (이전 코드와 동일)
 };
 
 const grey = {
-  50: '#F3F6F9',
-  100: '#E5EAF2',
-  200: '#DAE2ED',
-  300: '#C7D0DD',
-  400: '#B0B8C4',
-  500: '#9DA8B7',
-  600: '#6B7A90',
-  700: '#434D5B',
-  800: '#303740',
-  900: '#1C2025',
+  // (이전 코드와 동일)
 };
 
 const InputElement = styled('input')(
-  ({ theme }) => `
+  ({ theme }) => `  
   width: 40px; /* Adjusted width for each input */
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.875rem;

@@ -39,9 +39,9 @@ function CustomEmailField() {
   return (
     <TextField
       id="input-with-icon-textfield"
-      label="이메일"
+      label="아이디"
       name="email"
-      type="email"
+      type="text"
       size="small"
       required
       fullWidth
@@ -120,7 +120,7 @@ function CustomButton(onClick ) {
 
 function SignUpLink() {
   return (
-    <Link href="/" variant="body2">
+    <Link href="/register" variant="body2">
       회원가입
     </Link>
   );

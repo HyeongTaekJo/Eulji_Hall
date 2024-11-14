@@ -5,49 +5,6 @@ import {
 } from '@mui/base/Unstable_NumberInput';
 import { styled } from '@mui/system';
 
-const NumberInput = React.forwardRef(function CustomNumberInput(props, ref) {
-  return (
-    <BaseNumberInput
-      slots={{
-        root: StyledInputRoot,
-        input: StyledInputElement,
-        incrementButton: StyledButton,
-        decrementButton: StyledButton,
-      }}
-      slotProps={{
-        incrementButton: {
-          children: '▴',
-        },
-        decrementButton: {
-          children: '▾',
-        },
-      }}
-      {...props}
-      ref={ref}
-    />
-  );
-});
-
-export default function NumberInputBasic() {
-  const [value, setValue] = React.useState(1);
-
-  const handleChange = (event, val) => {
-    // 음수 값이 아닌 경우에만 상태 업데이트
-    if (val === null || val >= 1) {
-      setValue(val);
-    }
-  };
-
-  return (
-    <NumberInput
-      aria-label="Demo number input"
-      placeholder="인원 수를 입력하세요."
-      value={value}
-      onChange={handleChange}
-    />
-  );
-}
-
 const blue = {
   100: '#DAECFF',
   200: '#80BFFF',
@@ -173,3 +130,40 @@ const StyledButton = styled('button')(
   }
 `
 );
+
+// Update this component to accept ref
+const NumberInputBasic = React.forwardRef(function CustomNumberInput(props, ref) {
+  const { value, onChange, ...rest } = props;
+
+  const handleChange = (event, val) => {
+    // Update value only if the value is not negative
+    if (val === null || val >= 1) {
+      onChange(val); // This should call the onChange provided by react-hook-form
+    }
+  };
+
+  return (
+    <BaseNumberInput
+      slots={{
+        root: StyledInputRoot,
+        input: StyledInputElement,
+        incrementButton: StyledButton,
+        decrementButton: StyledButton,
+      }}
+      slotProps={{
+        incrementButton: {
+          children: '▴',
+        },
+        decrementButton: {
+          children: '▾',
+        },
+      }}
+      value={value} // Use the value from props
+      onChange={handleChange} // Handle the change
+      ref={ref} // Forward the ref
+      {...rest} // Spread remaining props
+    />
+  );
+});
+
+export default NumberInputBasic;

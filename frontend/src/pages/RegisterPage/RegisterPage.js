@@ -1,144 +1,128 @@
-import React from 'react'
-import {useDispatch} from "react-redux";
-import { useForm } from "react-hook-form";
+import React from 'react';
+import { useDispatch } from 'react-redux';
+import { useForm } from 'react-hook-form';
 import { registerUser } from '../../store/thunkFunctions';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom'; // 추가된 부분
+import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
+
+const FormContainer = styled.div`
+  max-width: 700px;
+  width: 80%;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+
+  @media (max-width: 768px) {
+    max-width: 500px;
+  }
+
+  @media (max-width: 576px) {
+    max-width: 100%;
+    padding: 15px;
+  }
+`;
+
+const Title = styled.h2`
+  text-align: center;
+  margin-bottom: 20px;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-top: 10px;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+`;
+
+const Button = styled.button`
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+`;
 
 const RegisterPage = () => {
-  const { 
-    register, 
-    handleSubmit, //확인 버튼 눌렀을 때 실행되는 것
-    formState : {errors}, //유효성 검사가 실패한 부분에 에러가 담긴다.
-    reset // 모든 입력값 리셋
-  } = useForm({mode: 'onChange'}) //위 함수들은 useForm에 있는 것들
-
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({ mode: 'onChange' });
   const dispatch = useDispatch();
   const navigate = useNavigate(); 
 
-  const onSubmit = ({email, password, name, confirmPassword}) => {
+  const onSubmit = ({ email, password, name, confirmPassword, codeInput }) => {
+    if (password !== confirmPassword) {
+      toast.error("비밀번호와 비밀번호 확인이 같아야 합니다.");
+      return;
+    }
+    if (codeInput !== '1234') {
+      toast.error("코드가 올바르지 않습니다.");
+      return;
+    }
 
-    if(password !== confirmPassword) {
-      toast.error("비밀번호와 비밀번호 확인은 같아야 합니다.");
-      return 
-    }
-    
-    let body = {
-      email,
-      password,
-      name,
-    }
+    let body = { email, password, name };
 
     dispatch(registerUser(body))
       .then(() => {
-        // 회원가입 성공 후 로그인 페이지로 이동
         navigate('/login');
       })
       .catch((error) => {
-        // 실패 시 에러 처리 (선택 사항)
         toast.error('회원가입 실패. 다시 시도해 주세요.');
       });
 
     reset();
-  }
-
-  const userEmail = {
-    required : '필수 필드입니다.',
-  }
-
-  const userName = {
-    required : '필수 필드입니다.',
-  }
-
-  const userPassword = {
-    required : '필수 필드입니다.',
-    minLength : { value : 6, message : '6자 이상 입력하세요.'},
-  }
-
-  const confirmPassword = {
-    required : '필수 필드입니다.',
-  }
+  };
 
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'center' , alignItems: 'center',
-      width: '100%', height: '100vh'
-    }}>
-      <form style={{display: 'flex', flexDirection:'column'}}
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <label
-           htmlFor='email'
-        >Email</label>
-        <input 
-          type='email' 
-          id='email'
-          {...register('email',userEmail)}
-        />
-         { //유효성 검사 후, 나타나는 부분
-          errors?.email && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.email.message} 
-            </span>
-          </div>  
-          }
-          <label
-           htmlFor='password'
-        >Name</label>
-        <input 
-          type="text"
-          id='name'
-          {...register('name',userName)}
-        />
-        { //유효성 검사 후, 나타나는 부분
-          errors?.name && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.name.message} 
-            </span>
-          </div>  
-        }
-        <label
-           htmlFor='password'
-        >Password</label>
-        <input 
-          type="password"
-          id='password'
-          {...register('password',userPassword)}
-        />
-        { //유효성 검사 후, 나타나는 부분
-          errors?.password && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.password.message} 
-            </span>
-          </div>  
-        }
-        <label
-           htmlFor='confirmPassword'
-        >Confirm Password</label>
-        <input 
-          type="password"
-          id='confirmPassword'
-          {...register('confirmPassword',confirmPassword)}
-        />
-        { //유효성 검사 후, 나타나는 부분
-          errors?.confirmPassword && //error안에 email이 있을 때
-          <div>
-            <span >
-              {errors.confirmPassword.message} 
-            </span>
-          </div>  
-        }
-        
-        <br/>
-        <button type='submit'>
-          회원 가입
-        </button>
-      </form>
-    </div>
-  )
-}
+    <FormContainer>
+      <Title>회원 가입</Title>
 
-export default RegisterPage
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Label htmlFor='email'>아이디</Label>
+        <Input type='text' id='email' {...register('email', { required: '필수 필드입니다.' })} />
+        {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
+
+        <Label htmlFor='name'>이름</Label>
+        <Input type="text" id='name' {...register('name', { required: '필수 필드입니다.' })} />
+        {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
+
+        <Label htmlFor='password'>비밀번호</Label>
+        <Input type="password" id='password' {...register('password', { required: '필수 필드입니다.', minLength: { value: 6, message: '6자 이상 입력하세요.' } })} />
+        {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
+
+        <Label htmlFor='confirmPassword'>비밀번호 확인</Label>
+        <Input type="password" id='confirmPassword' {...register('confirmPassword', { required: '필수 필드입니다.' })} />
+        {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword.message}</ErrorMessage>}
+
+        <Label htmlFor='codeInput'>코드 입력</Label>
+        <Input type="text" id='codeInput' {...register('codeInput', { required: '필수 필드입니다.' })} />
+        {errors.codeInput && <ErrorMessage>{errors.codeInput.message}</ErrorMessage>}
+
+        <Button type='submit'>회원 가입</Button>
+      </form>
+    </FormContainer>
+  );
+};
+
+export default RegisterPage;

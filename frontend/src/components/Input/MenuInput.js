@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+// MenuInput.js
+import React, { useState, forwardRef } from 'react';
 import { FormGroup, FormControlLabel, Checkbox, FormHelperText, Box } from '@mui/material';
 
-export default function MenuInput() {
+const MenuInput = forwardRef((props, ref) => {
   const [selectedItems, setSelectedItems] = useState({
     pork: false,
     beef: false,
@@ -18,7 +19,7 @@ export default function MenuInput() {
   const isAnyChecked = Object.values(selectedItems).some((item) => item);
 
   return (
-    <Box>
+    <Box ref={ref}>
       <FormGroup row>
         <FormControlLabel
           control={<Checkbox checked={selectedItems.pork} onChange={handleChange} name="pork" />}
@@ -38,4 +39,6 @@ export default function MenuInput() {
       )}
     </Box>
   );
-}
+});
+
+export default MenuInput;

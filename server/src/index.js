@@ -31,7 +31,8 @@ app.post('/', (req, res) => {
 ///users 이 경로로 요청이 오면 해당 라우터로 간다.
 app.use('/users', require('./routes/users')) 
 
-
+///reservations 이 경로로 요청이 오면 해당 라우터로 간다.
+app.use('/reservations', require('./routes/reservations')) 
 
 
 

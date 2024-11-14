@@ -2,13 +2,17 @@ import * as React from 'react';
 import { Input as BaseInput } from '@mui/base/Input';
 import { styled } from '@mui/system';
 
+// Input 컴포넌트를 forwardRef로 수정
 const Input = React.forwardRef(function CustomInput(props, ref) {
   return <BaseInput slots={{ input: InputElement }} {...props} ref={ref} />;
 });
 
-export default function TextInput({placeholder}) {
-  return <Input aria-label="Demo input" placeholder={placeholder} />;
-}
+// TextInput 컴포넌트를 forwardRef로 수정
+const TextInput = React.forwardRef(({ placeholder, ...props }, ref) => {
+  return <Input required={true} ref={ref} aria-label="Demo input" placeholder={placeholder} {...props} />;
+});
+
+export default TextInput;
 
 const blue = {
   100: '#DAECFF',

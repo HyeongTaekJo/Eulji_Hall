@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { styled } from '@mui/system';
 import { grey, blue } from '@mui/material/colors'; // 색상 정의
+import TextField from '@mui/material/TextField';
 
 const StyledDatePickerRoot = styled('div')(
   ({ theme }) => `
@@ -30,21 +31,6 @@ const StyledDatePickerRoot = styled('div')(
 `
 );
 
-const StyledInput = styled('input')(
-  ({ theme }) => `
-  flex: 1;
-  font-size: 0.875rem;
-  padding: 2px 2px;
-  border: none; /* 테두리 없음 */
-  background: inherit; /* 배경 색상 유지 */
-  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
-  outline: none;
-  &::placeholder {
-    color: ${theme.palette.mode === 'dark' ? grey[500] : grey[300]};
-  }
-`
-);
-
 const StyledOpenPickerIcon = styled('button')(
   ({ theme }) => `
   display: flex;
@@ -61,7 +47,7 @@ const StyledOpenPickerIcon = styled('button')(
 `
 );
 
-export default function DateInput() {
+const DateInput = React.forwardRef((props, ref) => {
   const [value, setValue] = React.useState(null);
 
   return (
@@ -70,12 +56,31 @@ export default function DateInput() {
         <DatePicker
           value={value}
           onChange={(newValue) => setValue(newValue)}
-          renderInput={(params) => <StyledInput {...params} placeholder="Select a date..." />}
-          components={{
-            OpenPickerIcon: StyledOpenPickerIcon
+          slotProps={{
+            textField: {
+              component: TextField,
+              inputRef: ref, // ref를 TextField에 전달
+              placeholder: "Select a date...",
+              fullWidth: true,
+              variant: "outlined",
+              InputProps: {
+                sx: {
+                  fontSize: '0.875rem',
+                  color: theme => theme.palette.mode === 'dark' ? grey[300] : grey[900],
+                  '&::placeholder': {
+                    color: theme => theme.palette.mode === 'dark' ? grey[500] : grey[300],
+                  },
+                },
+              },
+            },
+            openPickerButton: {
+              component: StyledOpenPickerIcon,
+            },
           }}
         />
       </StyledDatePickerRoot>
     </LocalizationProvider>
   );
-}
+});
+
+export default DateInput;

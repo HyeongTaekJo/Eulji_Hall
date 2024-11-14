@@ -3,6 +3,7 @@ import axiosInstance from '../utils/axios';
 
 //createAsyncThunk로 만든것은 알아서 extraReducers를 찾아서 결과를 반환한다.
 
+//회원가입
 export const registerUser = createAsyncThunk(
     "user/registerUser",
     async (body,thunkAPI) => {
@@ -20,6 +21,7 @@ export const registerUser = createAsyncThunk(
 );
 
 //페이지를 움길때 마다 작동(App.jsx에서 호출)
+//권한조회
 export const authUser = createAsyncThunk( 
     "user/authUser",
     async (body, thunkAPI) => {
@@ -35,6 +37,7 @@ export const authUser = createAsyncThunk(
     }
 );
 
+//로그인
 export const loginUser = createAsyncThunk(
     "user/loginUser",
     async (body,thunkAPI) => {
@@ -52,6 +55,7 @@ export const loginUser = createAsyncThunk(
     }
 );
 
+//로그아웃
 export const logoutUser = createAsyncThunk(
     "user/logoutUser",
     async (body, thunkAPI) => {
