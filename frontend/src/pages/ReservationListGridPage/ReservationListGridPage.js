@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './ReservationListGridPage.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchReservations, updateReservation } from '../../store/reservationThunks';
+import { fetchReservations, fetchRoomTypes, updateReservation } from '../../store/reservationThunks';
 import DatePicker from 'react-datepicker';  // react-datepicker 임포트
 import "react-datepicker/dist/react-datepicker.css";  // 스타일 추가
 import { FaExclamationCircle } from 'react-icons/fa'; // React Icons 라이브러리
@@ -37,7 +37,8 @@ const getTodayInKST = () => {
 
 const ReservationListGridPage = () => {
   const dispatch = useDispatch();
-  const { reservations = [] } = useSelector((state) => state.reservation || {});
+  const { reservations = [],  } = useSelector((state) => state.reservation || {});
+  const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
   const [currentPage, setCurrentPage] = useState(0);
   const [startDate, setStartDate] = useState(getTodayInKST()); // 오늘 날짜
   const [endDate, setEndDate] = useState(getTodayInKST()); // 오늘 날짜
@@ -48,6 +49,7 @@ const ReservationListGridPage = () => {
   const [modifiedReservations, setModifiedReservations] = useState({});
   const statusOptions = ['예약', '완료', '취소', '전체']; // '전체' 추가
   const tableOptions = ['룸', '홀']; // 룸/홀 선택 옵션
+  //const roomTypes = ['미지정','청실', '홍실', '매실', '난실', '국실', '죽실'];
   const defaultMenuItems = ['돼지고기', '소고기', '회']; // 기본 메뉴 항목
 
   const handlePrevPage = () => {
@@ -61,7 +63,15 @@ const ReservationListGridPage = () => {
   useEffect(() => {
     dispatch(fetchReservations({startDate, endDate, statusFilter,isSaved})).then(() => {
     });
+
+    //console.log(JSON.stringify(reservations, null, 2)); 
   }, [dispatch,startDate,endDate,statusFilter,isSaved]);
+
+  useEffect(() => {
+    dispatch(fetchRoomTypes());
+    //console.log('Room types fetched successfully');
+    //console.log(JSON.stringify(roomTypes, null, 2)); 
+  }, [dispatch]);
 
   const handleFieldChange = (id, field, value) => {
     setModifiedReservations((prev) => ({
@@ -304,6 +314,53 @@ const ReservationListGridPage = () => {
             </select>
           </div>
           <div className="grid-cell">
+            {row.tableType === "홀" 
+            ? 
+            <div
+              className="custom-box"
+              //onClick={() => console.log("X 박스 클릭됨")}
+              style={{
+                width: "30px",
+                height: "30px",
+                border: "1px solid #ccc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black',
+                fontSize: "18px",
+                fontWeight: "bold",
+              }}
+            > ✕ </div> 
+            :
+            <select
+              value={modifiedRow.roomType || row.roomType}
+              onChange={(e) => handleFieldChange(row._id, 'roomType', e.target.value)}
+              className="status-select"
+              disabled={row.status !== '예약'}
+              style={{
+                backgroundColor: row.status !== '예약' ? '#f0f0f0' : 'white',
+                cursor: row.status !== '예약' ? 'not-allowed' : 'pointer',
+                color: row.status !== '예약' ? '#a0a0a0' : 'black'
+              }}
+            >
+              {roomTypes
+                .filter((option) => option.name) // name이 존재하는 항목만 필터링
+                .map((option) => (
+                  <option key={option._id} value={option.name}>
+                    {option.name}
+                  </option>
+              ))}
+              {/* {roomTypes.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))} */}
+
+            </select>}
+          </div>
+          <div className="grid-cell">
             <select
               value={modifiedRow.status || row.status}
               onChange={(e) => handleStatusChange(row._id, e.target.value)}
@@ -373,6 +430,7 @@ const ReservationListGridPage = () => {
         <div className="grid-cell">연락처</div>
         <div className="grid-cell">메뉴</div>
         <div className="grid-cell">룸/홀 선택</div>
+        <div className="grid-cell">룸 종류</div>
         <div className="grid-cell">예약 상태</div>
         <div className="grid-cell">저장</div>
       </div>

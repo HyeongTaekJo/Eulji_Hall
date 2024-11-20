@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { createReservation } from '../../store/reservationThunks';
+import { createReservation, fetchReservations } from '../../store/reservationThunks';
 import { useNavigate } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
+import { ko } from 'date-fns/locale';  // date-fns의 한국어 로케일을 임포트
 import "react-datepicker/dist/react-datepicker.css"; // Import CSS for date picker
 
 const FormContainer = styled.div`
@@ -213,11 +214,12 @@ const generateTimeOptions = () => {
 };
 
 const ReservationForm = () => {
-  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger  } = useForm();
+  const { reservations = [],  } = useSelector((state) => state.reservation || {});
+  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger ,setError,clearErrors } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const watchMenu = watch("menu", []); // "menu" 필드를 watch하여 선택된 메뉴 확인
 
+  const watchMenu = watch("menu", []); 
 
   const today = new Date();
   const watchTableType = watch("tableType", "");
@@ -231,6 +233,152 @@ const ReservationForm = () => {
     }
   };
 
+  // const excludedDates = [
+  //   new Date(2024, 10, 18), // 2024-11-18
+  //   new Date(2024, 10, 19), // 2024-11-19
+  //   new Date(2024, 10, 20), // 2024-11-20
+  // ];
+
+  
+
+  const hallLimit = 8;
+  const roomLimit = 6;
+
+  // 각 필드 값들 별도로 상태 관리
+  const [tableType, setTableType] = useState('');
+  const [reservationDate, setReservationDate] = useState('');
+  const [peopleCount, setPeopleCount] = useState('');
+
+  //예약마감된 일자
+  const [excludedDates, setExcludedDates] = useState([]);
+
+  // 실시간 예약가능 상황
+  const [hallAvailableCount, setHallAvailableCount] = useState(hallLimit);
+  const [roomAvailableCount, setRoomAvailableCount] = useState(roomLimit);
+
+  // watch로 필드 값 추적
+  const formValues = watch(); // watch로 전체 값 추적
+
+  // watch로 추적된 값이 바뀔 때마다 상태 업데이트
+  useEffect(() => {
+    setTableType(formValues.tableType);
+    setReservationDate(formValues.reservationDate);
+    setPeopleCount(formValues.peopleCount);
+  }, [formValues]);
+
+  // fullInfo 값을 계산하는 useEffect
+  useEffect(() => {
+    // fullInfo 형식으로 출력
+    console.log(`Table: ${tableType}, Date: ${reservationDate}, People: ${peopleCount}`);
+  }, [tableType, reservationDate, peopleCount]);
+
+  useEffect(() => {
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 구하기
+    const today = new Date();
+    
+    // 로컬 시간 기준으로 날짜 포맷팅
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    // startDate로 오늘 날짜 전달
+    dispatch(fetchReservations({ startDate: formattedDate })).then(() => {
+      // 성공적인 호출 후 추가 작업
+    });
+  }, [dispatch]);
+
+  const data = reservations;
+
+  const groupByDateWithCounts = (data) => {
+     // 먼저 예약 데이터를 집계
+    const result = data.reduce((result, reservation) => {
+    const { date, tableType, peopleCount } = reservation;
+    const formattedDate = new Date(date).toISOString().split("T")[0];
+      // 날짜 키가 없으면 초기화
+      if (!result[formattedDate]) {
+        result[formattedDate] = {
+          홀: { remaining: hallLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+          룸: { remaining: roomLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+        };
+      }
+
+      // 테이블 유형에 따라 값 업데이트
+      if (tableType === "홀" || tableType === "룸") {
+        result[formattedDate][tableType].booked += 1;
+        result[formattedDate][tableType].remaining -= 1;
+      }
+  
+      return result;
+    }, {});
+
+    // 리듀스가 끝난 후 남은 인원 수량 계산
+    for (const date in result) {
+      if (result[date].홀) {
+        // 홀의 경우, 예약된 수량을 4명씩 계산하여 남은 인원 수량 계산
+        result[date].홀.remainingPeople = (hallLimit - result[date].홀.booked) * 4;
+      }
+
+      if (result[date].룸) {
+        // 룸의 경우, 예약된 수량을 8명씩 계산하여 남은 인원 수량 계산
+        result[date].룸.remainingPeople = (roomLimit - result[date].룸.booked) * 8;
+      }
+
+      // // 남은 인원 수량이 0 이하인 경우 해당 날짜를 제거
+      // if (
+      //   (result[date].홀 && result[date].홀.remainingPeople <= 0) ||
+      //   (result[date].룸 && result[date].룸.remainingPeople <= 0)
+      // ) {
+      //   delete result[date]; // 결과에서 해당 날짜를 삭제
+      // }
+    }
+    
+    return result;
+  };
+
+  // //예약마감된 날짜로 만들기
+  useEffect(() => {
+    // 결과 생성
+    const result = groupByDateWithCounts(data);
+    //console.log('result-> ' + JSON.stringify(result, null, 2));
+  
+    // 객체를 배열 형식으로 변환 (옵션)
+    const formattedResult = Object.entries(result).map(([date, data]) => ({
+      date,
+      ...data,
+    }));
+    //console.log('formattedResult-> ' + JSON.stringify(formattedResult, null, 2));
+  
+    // 날짜를 new Date() 형식으로 변환
+    const newExcludedDates = formattedResult.map((item) => {
+      const { date, 홀, 룸 } = item;  // 홀과 룸을 분리
+  
+      // tableType에 맞는 데이터만 필터링
+      let filteredDate = null;
+  
+      // tableType에 따라서 분기 처리
+      if (tableType === "홀") {
+        if (홀.remaining <= 0 || 홀.remainingPeople < peopleCount) {
+          filteredDate = date;  // 조건에 맞으면 해당 일자를 제외
+        }
+      } else if (tableType === "룸") {
+        if (룸.remaining <= 0 || 룸.remainingPeople < peopleCount) {
+          filteredDate = date;  // 조건에 맞으면 해당 일자를 제외
+        }
+      }
+      // 만약 filteredDate가 설정되었으면, 그 날짜를 new Date() 형식으로 변환
+      if (filteredDate) {
+        let newDate = new Date(filteredDate);
+
+        // Date 객체로 변환된 date를 'new Date("yyyy-mm-dd")' 형식으로 변환
+        return new Date(`${newDate.toISOString().split("T")[0]}`);
+      }
+  
+      return null;  // 조건에 맞지 않으면 null을 반환하여 제외
+    }).filter((date) => date !== null);  // null을 제외한 날짜만 포함
+  
+    // 상태 업데이트
+    setExcludedDates(newExcludedDates);
+    console.log('excludedDates-> ' + excludedDates);
+  }, [data, peopleCount, tableType, reservationDate]); 
+ 
   const onSubmit = ({ affiliation, rank, name, contact1, contact2, contact3, tableType, peopleCount, menu, reservationDate, reservationTime }) => {
     const fullContact = `${contact1}-${contact2}-${contact3}`;
 
@@ -261,7 +409,8 @@ const ReservationForm = () => {
       menu: processedMenu, // 배열로 변환된 메뉴
       date: formattedDate,
       time: reservationTime,
-      status: '예약'
+      status: '예약',
+     
     };
   
     dispatch(createReservation(body))
@@ -357,9 +506,14 @@ const ReservationForm = () => {
         {errors.tableType && <ErrorMessage>{errors.tableType.message}</ErrorMessage>}
 
         <Label>인원 수:</Label>
-        <Select {...register('peopleCount', { required: '인원 수를 선택해주세요' })}>
+        <Select
+          {...register('peopleCount', { 
+            required: '인원 수를 선택해주세요',
+          })}
+          disabled={!watch("tableType")}  // 테이블을 선택하기 전에는 비활성화
+        >
           <option value="">선택...</option>
-          {[...Array(20)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <option key={i + 1} value={i + 1}>{i + 1}명</option>
           ))}
         </Select>
@@ -382,22 +536,28 @@ const ReservationForm = () => {
 
         <Label>예약일자:</Label>
         <Controller
-          name="reservationDate" // 필드 이름
-          control={control} // react-hook-form의 control 객체
-          defaultValue={null} // 기본값은 null로 설정 (초기값 없음)
-          rules={{ required: '예약일자를 선택해주세요' }} // 필수 입력 규칙 추가
+          name="reservationDate"
+          control={control}
+          defaultValue={null}
+          rules={{
+            required: '예약일자를 선택해주세요',
+          }}
           render={({ field }) => (
             <DatePicker
-            {...register("reservationDate", { required: '예약일자를 선택해주세요' })} // register로 필드 연결
-              selected={field.value} // DatePicker에 선택된 값 전달
+              {...field}
+              selected={field.value}
               onChange={(date) => {
-                field.onChange(date); // react-hook-form의 상태 업데이트
-                handleDateChange(date); // 추가적인 날짜 처리
+                field.onChange(date); // 상태 업데이트
+                handleDateChange(date); // 추가 처리
               }}
-              minDate={new Date(today)} // 오늘 이후 날짜만 선택 가능
-              dateFormat="yyyy-MM-dd" // 날짜 형식
+              disabled={!watch("tableType") || !watch("peopleCount")} // 테이블과 인원 선택 여부에 따라 활성화 제어
+              minDate={new Date(today)}
+              dateFormat="yyyy-MM-dd"
               placeholderText="날짜 선택"
-              customInput={<CustomDatePicker {...field} />} // 커스텀 클래스 적용
+              customInput={<CustomDatePicker />}
+              excludeDates={excludedDates}
+              locale={ko}
+              
             />
           )}
         />

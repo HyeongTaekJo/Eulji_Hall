@@ -22,6 +22,7 @@ export const createReservation = createAsyncThunk(
 export const fetchReservations = createAsyncThunk(
     'reservation/fetchReservations',
     async ({ startDate, endDate, statusFilter }, thunkAPI) => {
+        console.log(`startDate`, startDate)
         try {
             const response = await axiosInstance.get('/reservations', {
                 params: { startDate, endDate, statusFilter } // 필터링 파라미터 전달
@@ -62,23 +63,42 @@ export const deleteReservation = createAsyncThunk(
     }
 );
 
-// 이름과 연락처로 예약 리스트를 가져오는 액션
+// 이름, 연락처, 상태로 예약 리스트를 가져오는 액션
 export const fetchReservationList = createAsyncThunk(
     'reservation/fetchReservationList',
-    async ({ searchName, searchContact }, thunkAPI) => {
+    async ({ searchName, searchContact, status }, thunkAPI) => {
         try {
-            //console.log('searchName: ' + searchName);
-            const response = await axiosInstance.post('/reservations/search', { searchName, searchContact });  // POST 방식으로 body에 전달
-            //console.log('response', response);
-            // 서버 응답 상태가 성공적이면 데이터 반환
+            const response = await axiosInstance.post('/reservations/search', { 
+                searchName, 
+                searchContact, 
+                status // 추가: 상태 필터 전달
+            });  
             if (response.status === 200) {
                 return response.data;  // 서버로부터 받은 예약 리스트 데이터
             } else {
                 throw new Error('예약 데이터를 가져오는 데 실패했습니다.');
             }
         } catch (err) {
-            // 에러 발생 시 에러 메시지 반환
             return thunkAPI.rejectWithValue(err.response?.data || err.message);
         }
     }
 );
+
+// 룸/홀 종류 조회
+export const fetchRoomTypes = createAsyncThunk(
+    'reservation/fetchRoomTypes',
+    async (_, thunkAPI) => {
+      try {
+        // GET 요청을 보냄
+        const response = await axiosInstance.post('/reservations/fetchRoomTypes', { 
+           
+        });  
+        //console.log(JSON.stringify(response, null, 2)); 
+        return response.data; // 서버에서 반환된 데이터를 Redux 상태에 저장
+      } catch (err) {
+        console.error('Error fetching room types:', err);
+        // 오류 상태 반환
+        return thunkAPI.rejectWithValue(err.response?.data || err.message);
+      }
+    }
+  );

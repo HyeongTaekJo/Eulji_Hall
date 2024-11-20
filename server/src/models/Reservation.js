@@ -26,6 +26,11 @@ const reservationSchema = mongoose.Schema({
     required: true,
     //enum: ['hall', 'room'], // 테이블 타입에 대한 제한
   },
+  roomType: {
+    type: String,
+    //required: true,
+    //enum: ['청실', '난실', '죽실'], // 룸 종류에 대한 제한 예시
+  },
   peopleCount: {
     type: Number,
     required: true,

@@ -18,23 +18,12 @@ import { authUser, logoutUser } from '../../store/thunkFunctions';
 const BRANDING = {
   logo: (
     <img
-      src={`${process.env.PUBLIC_URL}/mark.jpg`}
+      src={`${process.env.PUBLIC_URL}/joyfactory_ci.png`}
       alt="mark logo"
-      style={{ height: '130px', width: 'auto' }}
+      style={{ width: '150px', height: 'auto' }}
     />
   ),
-  title: (
-    <Typography
-      variant="h6"
-      sx={{
-        flexGrow: 1,
-        textAlign: 'left',
-        paddingRight: { xs: '130px', sm: '16px' }, // Add padding on the right for mobile
-      }}
-    >
-      을지회관
-    </Typography>
-  ),
+  title: '',
 };
 
 const demoTheme = createTheme({
