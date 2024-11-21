@@ -51,7 +51,8 @@ const ReservationListGridPage = () => {
   const tableOptions = ['룸', '홀']; // 룸/홀 선택 옵션
   //const roomTypes = ['미지정','청실', '홍실', '매실', '난실', '국실', '죽실'];
   const defaultMenuItems = ['돼지고기', '소고기', '회']; // 기본 메뉴 항목
-
+  
+  
   const handlePrevPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 0));
   };
@@ -72,6 +73,8 @@ const ReservationListGridPage = () => {
     //console.log('Room types fetched successfully');
     //console.log(JSON.stringify(roomTypes, null, 2)); 
   }, [dispatch]);
+
+ 
 
   const handleFieldChange = (id, field, value) => {
     setModifiedReservations((prev) => ({
@@ -297,7 +300,10 @@ const ReservationListGridPage = () => {
           <div className="grid-cell">
             <select
               value={modifiedRow.tableType || row.tableType}
-              onChange={(e) => handleFieldChange(row._id, 'tableType', e.target.value)}
+              onChange={(e) => {
+                handleFieldChange(row._id, 'tableType', e.target.value);
+                handleFieldChange(row._id, 'roomType', "미지정");
+              }}
               className="status-select"
               disabled={row.status !== '예약'}
               style={{
@@ -313,9 +319,10 @@ const ReservationListGridPage = () => {
               ))}
             </select>
           </div>
+
           <div className="grid-cell">
-            {row.tableType === "홀" 
-            ? 
+            {modifiedRow.tableType=== "홀"  || row.tableType === "홀" 
+            ? (
             <div
               className="custom-box"
               //onClick={() => console.log("X 박스 클릭됨")}
@@ -332,8 +339,8 @@ const ReservationListGridPage = () => {
                 fontSize: "18px",
                 fontWeight: "bold",
               }}
-            > ✕ </div> 
-            :
+            > ✕ </div> )
+            :(
             <select
               value={modifiedRow.roomType || row.roomType}
               onChange={(e) => handleFieldChange(row._id, 'roomType', e.target.value)}
@@ -352,13 +359,7 @@ const ReservationListGridPage = () => {
                     {option.name}
                   </option>
               ))}
-              {/* {roomTypes.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))} */}
-
-            </select>}
+            </select>)}
           </div>
           <div className="grid-cell">
             <select

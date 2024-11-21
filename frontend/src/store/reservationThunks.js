@@ -22,7 +22,7 @@ export const createReservation = createAsyncThunk(
 export const fetchReservations = createAsyncThunk(
     'reservation/fetchReservations',
     async ({ startDate, endDate, statusFilter }, thunkAPI) => {
-        console.log(`startDate`, startDate)
+        //console.log(`startDate`, startDate)
         try {
             const response = await axiosInstance.get('/reservations', {
                 params: { startDate, endDate, statusFilter } // 필터링 파라미터 전달

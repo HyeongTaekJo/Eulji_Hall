@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { createReservation, fetchReservations } from '../../store/reservationThunks';
+import { createReservation, fetchReservations, fetchRoomTypes } from '../../store/reservationThunks';
 import { useNavigate } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
@@ -215,6 +215,7 @@ const generateTimeOptions = () => {
 
 const ReservationForm = () => {
   const { reservations = [],  } = useSelector((state) => state.reservation || {});
+  const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
   const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger ,setError,clearErrors } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -269,7 +270,7 @@ const ReservationForm = () => {
   // fullInfo 값을 계산하는 useEffect
   useEffect(() => {
     // fullInfo 형식으로 출력
-    console.log(`Table: ${tableType}, Date: ${reservationDate}, People: ${peopleCount}`);
+    //console.log(`Table: ${tableType}, Date: ${reservationDate}, People: ${peopleCount}`);
   }, [tableType, reservationDate, peopleCount]);
 
   useEffect(() => {
@@ -285,60 +286,204 @@ const ReservationForm = () => {
     });
   }, [dispatch]);
 
+  useEffect(() => {
+    dispatch(fetchRoomTypes());
+    //console.log('Room types fetched successfully');
+    //console.log(JSON.stringify(roomTypes, null, 2)); 
+  }, [dispatch]);
+
+
+
+
+
+
+
+
+  /////////////////////////////////////////////
+  const calculateRemainingRoomCapacity = (reservations, roomTypes) => {
+    // 날짜별로 데이터를 그룹화하기 위한 결과 객체 초기화
+    const result = {};
+  
+    // "예약" 상태인 데이터만 필터링
+    const filteredReservations = reservations.filter((reservation) => reservation.status === "예약");
+  
+    filteredReservations.forEach((reservation) => {
+      const { date, roomType, peopleCount, tableType } = reservation;
+      const formattedDate = new Date(date).toISOString().split("T")[0]; // 날짜를 YYYY-MM-DD 형식으로 변환
+  
+      // 해당 날짜가 result 객체에 없으면 초기화
+      if (!result[formattedDate]) {
+        result[formattedDate] = {
+          remainingPeople: 0, // 남아 있는 방들의 최대 수용 인원 합계
+          bookedRooms: [], // 해당 날짜에 예약된 방 이름 목록
+          remainingTables: hallLimit, // 남아있는 홀 테이블 수
+          remainingRooms: [], // 남아있는 룸 목록
+          minRoomPeople: Infinity, // 남아있는 룸의 최소 인원 (최소값 초기화)
+          maxRoomPeople: 0, // 남아있는 룸의 최대 인원 (최대값 초기화)
+          totalRemainingRooms: 0,  // 남아있는 방 수 추가
+          remainingHallPeople: 0 // 남아있는 홀의 총 인원 수
+        };
+      }
+  
+      // 예약된 방 추가, undefined 값 제외
+      if (roomType && roomType !== "미지정") {
+        result[formattedDate].bookedRooms.push(roomType);
+
+        
+      }
+
+       // 홀 예약인 경우 테이블 수 계산 (1개 테이블은 4명 수용)
+      if (tableType === "홀") {
+        const tablesNeeded = Math.ceil(peopleCount / 4); // 필요한 테이블 수 계산
+        
+        // 남아있는 테이블 수가 부족할 경우 차감을 방지하도록 조건 추가
+        if (result[formattedDate].remainingTables >= tablesNeeded) {
+          result[formattedDate].remainingTables -= tablesNeeded;
+        } else {
+          // 남은 테이블 수가 부족하면 0으로 설정
+          result[formattedDate].remainingTables = 0;
+        }
+      }
+    });
+  
+    // 날짜별로 방 데이터를 처리하여 남은 수용 인원을 계산
+    Object.keys(result).forEach((date) => {
+      const bookedRooms = result[date].bookedRooms;
+  
+      // 해당 날짜에 이미 예약된 방을 제외한 나머지 방 목록 필터링 (isAvailable가 true인 방만 포함)
+      const remainingRooms = roomTypes.filter(
+        (room) => room.isAvailable && room.name !== "미지정" && !bookedRooms.includes(room.name)
+      );
+  
+      // 남아 있는 방들의 maxPeople 값을 합산
+      result[date].remainingPeople = remainingRooms.reduce((sum, room) => {
+        result[date].minRoomPeople = Math.min(result[date].minRoomPeople, room.minPeople); // 최소 인원 업데이트
+        result[date].maxRoomPeople = Math.max(result[date].maxRoomPeople, room.maxPeople); // 최대 인원 업데이트
+        return sum + (room.maxPeople || 0); // maxPeople 값이 없으면 기본값으로 0 사용
+      }, 0);
+  
+      // 남아 있는 룸들의 정보를 업데이트 (minimum과 maximum 인원 값)
+      result[date].remainingRooms = remainingRooms.map(room => room.name);
+
+      // 추가: 남아 있는 방 수 합계 계산
+      result[date].totalRemainingRooms = remainingRooms.length;
+
+      // 홀의 남은 인원 수 계산 (각 테이블은 4명 수용)
+      result[date].remainingHallPeople = result[date].remainingTables * 4;
+    });
+  
+    return result;
+  };
+
+
+  const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
+  console.log(remainingRoomCapacity);
+
+  /////////////////////////////////////////////
+
   const data = reservations;
 
   const groupByDateWithCounts = (data) => {
-     // 먼저 예약 데이터를 집계
+    const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
+    //console.log('data-> ' + JSON.stringify(data, null, 2));
+    // 먼저 예약 데이터를 집계
+    // 예약 데이터를 집계
     const result = data.reduce((result, reservation) => {
-    const { date, tableType, peopleCount } = reservation;
-    const formattedDate = new Date(date).toISOString().split("T")[0];
+      const { date, tableType, peopleCount } = reservation;
+      const formattedDate = new Date(date).toISOString().split("T")[0]; // 날짜를 YYYY-MM-DD 형식으로 변환
+
       // 날짜 키가 없으면 초기화
       if (!result[formattedDate]) {
-        result[formattedDate] = {
-          홀: { remaining: hallLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
-          룸: { remaining: roomLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
-        };
+          result[formattedDate] = {
+              홀: { remaining: 0, remainingPeople: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+              룸: { remaining: 0, totalRemainingRooms: 0, maxRoomPeople: 0, minRoomPeople: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+          };
       }
 
-      // 테이블 유형에 따라 값 업데이트
-      if (tableType === "홀" || tableType === "룸") {
-        result[formattedDate][tableType].booked += 1;
-        result[formattedDate][tableType].remaining -= 1;
+      // 해당 날짜의 remainingRoomCapacity 데이터가 있는 경우, 값을 업데이트
+      if (remainingRoomCapacity[formattedDate]) {
+          const remainingData = remainingRoomCapacity[formattedDate];
+          
+          // 홀 테이블 업데이트
+          if (remainingData.remainingTables !== undefined) {
+              result[formattedDate].홀.remaining = remainingData.remainingTables; // 남은 테이블 수
+          }
+          if (remainingData.remainingHallPeople !== undefined) {
+              result[formattedDate].홀.remainingPeople = remainingData.remainingHallPeople; // 남은 테이블 수용 인원
+          }
+
+          // 룸 업데이트
+          if (remainingData.totalRemainingRooms !== undefined) {
+              result[formattedDate].룸.remaining = remainingData.totalRemainingRooms; // 남은 룸 수
+          }
+          if (remainingData.minRoomPeople !== undefined) {
+              result[formattedDate].룸.minRoomPeople = remainingData.minRoomPeople; // 최소 수용 인원
+          }
+          if (remainingData.maxRoomPeople !== undefined) {
+              result[formattedDate].룸.maxRoomPeople = remainingData.maxRoomPeople; // 최대 수용 인원
+          }
       }
-  
+
       return result;
-    }, {});
+  }, {});
 
-    // 리듀스가 끝난 후 남은 인원 수량 계산
-    for (const date in result) {
-      if (result[date].홀) {
-        // 홀의 경우, 예약된 수량을 4명씩 계산하여 남은 인원 수량 계산
-        result[date].홀.remainingPeople = (hallLimit - result[date].홀.booked) * 4;
-      }
+  console.log('result-> ' + JSON.stringify(result, null, 2));
 
-      if (result[date].룸) {
-        // 룸의 경우, 예약된 수량을 8명씩 계산하여 남은 인원 수량 계산
-        result[date].룸.remainingPeople = (roomLimit - result[date].룸.booked) * 8;
-      }
+  return result;
+};
 
-      // // 남은 인원 수량이 0 이하인 경우 해당 날짜를 제거
-      // if (
-      //   (result[date].홀 && result[date].홀.remainingPeople <= 0) ||
-      //   (result[date].룸 && result[date].룸.remainingPeople <= 0)
-      // ) {
-      //   delete result[date]; // 결과에서 해당 날짜를 삭제
-      // }
-    }
+
+
+
+  // const groupByDateWithCounts = (data) => {
+  //   //console.log('data-> ' + JSON.stringify(data, null, 2));
+  //   // 먼저 예약 데이터를 집계
+  //   const result = data.reduce((result, reservation) => {
+  //     const { date, tableType, peopleCount } = reservation;
+  //     const formattedDate = new Date(date).toISOString().split("T")[0];
+  //     // 날짜 키가 없으면 초기화
+  //     if (!result[formattedDate]) {
+  //       result[formattedDate] = {
+  //         홀: { remaining: hallLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+  //         룸: { remaining: roomLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
+  //       };
+  //     }
+
+  //     // 테이블 유형에 따라 값 업데이트
+  //     if (tableType === "홀" || tableType === "룸") {
+  //       result[formattedDate][tableType].booked += 1;
+  //       result[formattedDate][tableType].remaining -= 1;
+  //     }
+
+  //     //console.log('result22-> ' + JSON.stringify(result, null, 2));
+  
+  //     return result;
+  //   }, {});
+
+  //   const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
+
+  //   // 리듀스가 끝난 후 남은 인원 수량 계산
+  //   for (const date in result) {
+  //     if (result[date].홀) {
+  //       // 홀의 경우, 예약된 수량을 4명씩 계산하여 남은 인원 수량 계산
+  //       result[date].홀.remainingPeople = (hallLimit - result[date].홀.booked) * 4;
+  //     }
+
+  //     if (result[date].룸) {
+  //       // 룸의 경우, 예약된 수량을 8명씩 계산하여 남은 인원 수량 계산
+  //       result[date].룸.remainingPeople = remainingRoomCapacity[date].remainingPeople;
+  //     }
+  //   }
     
-    return result;
-  };
+  //   return result;
+  // };
 
   // //예약마감된 날짜로 만들기
   useEffect(() => {
     // 결과 생성
     const result = groupByDateWithCounts(data);
-    //console.log('result-> ' + JSON.stringify(result, null, 2));
-  
+    
+
     // 객체를 배열 형식으로 변환 (옵션)
     const formattedResult = Object.entries(result).map(([date, data]) => ({
       date,
@@ -376,10 +521,26 @@ const ReservationForm = () => {
   
     // 상태 업데이트
     setExcludedDates(newExcludedDates);
-    console.log('excludedDates-> ' + excludedDates);
+    //console.log('excludedDates-> ' + excludedDates);
+
+    
   }, [data, peopleCount, tableType, reservationDate]); 
+
+  useEffect(() => {
+    // 테이블 타입이 변경될 때 상태 초기화
+    setValue('peopleCount', ''); // 인원 수 초기화
+    setValue('reservationDate', null); // 예약 날짜 초기화
+    setValue('reservationTime', ''); // 예약 시간 초기화
+  }, [tableType, setValue]);
+
+  useEffect(() => {
+    // 테이블 타입이 변경될 때 상태 초기화
+    setValue('reservationDate', null); // 예약 날짜 초기화
+    setValue('reservationTime', ''); // 예약 시간 초기화
+  }, [peopleCount, setValue]);
  
   const onSubmit = ({ affiliation, rank, name, contact1, contact2, contact3, tableType, peopleCount, menu, reservationDate, reservationTime }) => {
+    
     const fullContact = `${contact1}-${contact2}-${contact3}`;
 
      // 예약일자를 'yyyy-MM-dd' 형식으로 변환
@@ -428,6 +589,11 @@ const ReservationForm = () => {
           reservationDate: null,  // 날짜 필드는 null로 리셋
           reservationTime: ''
         });
+
+        // 성공적으로 생성 후 navigate 호출
+        navigate('/reservationList', {
+          state: { searchName: name, searchContact: fullContact }
+        });
       })
       .catch((error) => {
         toast.error('예약 실패. 다시 시도해 주세요.');
@@ -447,7 +613,6 @@ const ReservationForm = () => {
   
     trigger('menu'); // 유효성 검사 트리거
   };
-
   
   return (
     <FormContainer>
@@ -542,6 +707,7 @@ const ReservationForm = () => {
           rules={{
             required: '예약일자를 선택해주세요',
           }}
+          
           render={({ field }) => (
             <DatePicker
               {...field}

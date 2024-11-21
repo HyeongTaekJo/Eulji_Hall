@@ -6,6 +6,15 @@ import { Button, Tabs, Tab } from "@mui/material"; // Tabs, Tab 추가
 import { useLocation } from "react-router-dom";
 import styled from "styled-components";
 
+const PageTitle = styled.h2`
+  text-align: center;
+  margin-bottom: 10px; /* 탭과의 간격을 줄임 */
+  padding: 10px 20px;
+  color: #333;
+  font-size: 28px; /* 폰트 크기를 조금 더 크게 조정 */
+  font-weight: bold;
+`;
+
 const NoReservationsMessage = styled.div`
   text-align: center;
   margin-top: 50px;
@@ -51,7 +60,8 @@ const ReservationListPage = () => {
   const displayedReservations = filteredReservations.slice(0, visibleCount);
 
   return (
-    <div style={{ margin: "40px 0" }}>
+    <div style={{ margin: "15px 0" }}>
+      <PageTitle>예약내역 조회</PageTitle>
       {/* Tabs 컴포넌트 */}
       <Tabs
         value={status}
