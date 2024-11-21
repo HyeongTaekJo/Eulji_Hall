@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Reservation = require('../models/Reservation');
 const RoomType = require('../models/RoomType');
+const HallType = require('../models/HallType');
 
 
 // 예약 생성
@@ -124,7 +125,7 @@ router.post('/search', async (req, res, next) => {
   }
 });
 
-// 룸,홀 타입조회
+// 룸 타입조회
 router.post('/fetchRoomTypes', async (req, res, next) => {
   try {
     // RoomType 테이블에서 모든 데이터 가져오기
@@ -133,6 +134,26 @@ router.post('/fetchRoomTypes', async (req, res, next) => {
 
     //console.log("roomTypes start" + roomTypes)
     res.json(roomTypes);
+  } catch (error) {
+    // 에러가 발생한 경우 처리
+    console.error('Error fetching room types:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch room types',
+      error: error.message,
+    });
+  }
+});
+
+// 홀 타입조회
+router.post('/fetchHallTypes', async (req, res, next) => {
+  try {
+    // RoomType 테이블에서 모든 데이터 가져오기
+    //console.log("hallTypes start")
+    const hallTypes = await HallType.find(); // 적절한 조건 추가 가능
+
+    //console.log("hallTypes start" + hallTypes)
+    res.json(hallTypes);
   } catch (error) {
     // 에러가 발생한 경우 처리
     console.error('Error fetching room types:', error);

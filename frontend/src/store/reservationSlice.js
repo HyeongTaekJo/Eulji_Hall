@@ -1,11 +1,12 @@
 // reservationSlice.js
 import { createSlice } from "@reduxjs/toolkit";
-import { createReservation, fetchReservations, updateReservation, deleteReservation,fetchReservationList, fetchRoomTypes } from "./reservationThunks";
+import { createReservation, fetchReservations, updateReservation, deleteReservation,fetchReservationList, fetchRoomTypes, fetchHallTypes } from "./reservationThunks";
 import { toast } from 'react-toastify';
 
 const initialState = {
     reservations: [],
     roomTypes:[],
+    hallTypes:[],
     isLoading: false,
     error: '',
 };
@@ -87,7 +88,7 @@ const reservationSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload;
             })
-             // 룸,홀 타입조회
+             // 룸 타입조회
             .addCase(fetchRoomTypes.pending, (state) => {
                 state.isLoading = true; // 로딩 상태 활성화
             })
@@ -97,6 +98,19 @@ const reservationSlice = createSlice({
                 //console.log("state.error = " +JSON.stringify(state.roomTypes, null, 2));
             })
             .addCase(fetchRoomTypes.rejected, (state, action) => {
+                state.isLoading = false; // 로딩 상태 비활성화
+                state.error = action.payload; // 오류 메시지 저장
+            })
+            // 홀 타입조회
+            .addCase(fetchHallTypes.pending, (state) => {
+                state.isLoading = true; // 로딩 상태 활성화
+            })
+            .addCase(fetchHallTypes.fulfilled, (state, action) => {
+                state.isLoading = false; // 로딩 상태 비활성화
+                state.hallTypes = action.payload; // 응답에서 data 배열만 저장
+                //console.log("state.error = " +JSON.stringify(state.roomTypes, null, 2));
+            })
+            .addCase(fetchHallTypes.rejected, (state, action) => {
                 state.isLoading = false; // 로딩 상태 비활성화
                 state.error = action.payload; // 오류 메시지 저장
             });

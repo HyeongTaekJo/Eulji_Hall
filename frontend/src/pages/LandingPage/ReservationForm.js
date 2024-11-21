@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { createReservation, fetchReservations, fetchRoomTypes } from '../../store/reservationThunks';
+import { createReservation, fetchHallTypes, fetchReservations, fetchRoomTypes } from '../../store/reservationThunks';
 import { useNavigate } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
@@ -216,7 +216,8 @@ const generateTimeOptions = () => {
 const ReservationForm = () => {
   const { reservations = [],  } = useSelector((state) => state.reservation || {});
   const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
-  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger ,setError,clearErrors } = useForm();
+  const hallTypes = useSelector((state) => state.reservation.hallTypes || []);
+  const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger  } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -234,29 +235,17 @@ const ReservationForm = () => {
     }
   };
 
-  // const excludedDates = [
-  //   new Date(2024, 10, 18), // 2024-11-18
-  //   new Date(2024, 10, 19), // 2024-11-19
-  //   new Date(2024, 10, 20), // 2024-11-20
-  // ];
-
-  
-
-  const hallLimit = 8;
-  const roomLimit = 6;
-
   // 각 필드 값들 별도로 상태 관리
   const [tableType, setTableType] = useState('');
   const [reservationDate, setReservationDate] = useState('');
   const [peopleCount, setPeopleCount] = useState('');
+  const [hallLimit, setHallLimit] = useState(0); //홀 테이블 총 수량
+  const [roomMaxPeople, setRoomMaxPeople] = useState(0);
 
   //예약마감된 일자
   const [excludedDates, setExcludedDates] = useState([]);
 
-  // 실시간 예약가능 상황
-  const [hallAvailableCount, setHallAvailableCount] = useState(hallLimit);
-  const [roomAvailableCount, setRoomAvailableCount] = useState(roomLimit);
-
+  
   // watch로 필드 값 추적
   const formValues = watch(); // watch로 전체 값 추적
 
@@ -267,11 +256,6 @@ const ReservationForm = () => {
     setPeopleCount(formValues.peopleCount);
   }, [formValues]);
 
-  // fullInfo 값을 계산하는 useEffect
-  useEffect(() => {
-    // fullInfo 형식으로 출력
-    //console.log(`Table: ${tableType}, Date: ${reservationDate}, People: ${peopleCount}`);
-  }, [tableType, reservationDate, peopleCount]);
 
   useEffect(() => {
     // 오늘 날짜를 YYYY-MM-DD 형식으로 구하기
@@ -290,16 +274,22 @@ const ReservationForm = () => {
     dispatch(fetchRoomTypes());
     //console.log('Room types fetched successfully');
     //console.log(JSON.stringify(roomTypes, null, 2)); 
+
+    // `isAvailable`이 true인 항목 필터링 후 `maxPeople` 값 중 가장 큰 값 찾기
+    const maxPeople = roomTypes
+      .filter((room) => room.isAvailable && room.maxPeople !== undefined)
+      .reduce((max, room) => Math.max(max, room.maxPeople), 0);
+
+    setRoomMaxPeople(maxPeople); // 상태 업데이트
   }, [dispatch]);
 
+  useEffect(() => {
+    dispatch(fetchHallTypes());
+    setHallLimit(hallTypes.length);
+    //console.log(JSON.stringify(hallTypes, null, 2)); 
+  }, [dispatch, hallTypes.length]);
 
 
-
-
-
-
-
-  /////////////////////////////////////////////
   const calculateRemainingRoomCapacity = (reservations, roomTypes) => {
     // 날짜별로 데이터를 그룹화하기 위한 결과 객체 초기화
     const result = {};
@@ -377,9 +367,7 @@ const ReservationForm = () => {
 
 
   const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
-  console.log(remainingRoomCapacity);
-
-  /////////////////////////////////////////////
+  //console.log(remainingRoomCapacity);
 
   const data = reservations;
 
@@ -389,7 +377,7 @@ const ReservationForm = () => {
     // 먼저 예약 데이터를 집계
     // 예약 데이터를 집계
     const result = data.reduce((result, reservation) => {
-      const { date, tableType, peopleCount } = reservation;
+      const { date} = reservation;
       const formattedDate = new Date(date).toISOString().split("T")[0]; // 날짜를 YYYY-MM-DD 형식으로 변환
 
       // 날짜 키가 없으면 초기화
@@ -427,62 +415,22 @@ const ReservationForm = () => {
       return result;
   }, {});
 
-  console.log('result-> ' + JSON.stringify(result, null, 2));
+    //console.log('result-> ' + JSON.stringify(result, null, 2));
 
-  return result;
-};
+    return result;
+  };
 
-
-
-
-  // const groupByDateWithCounts = (data) => {
-  //   //console.log('data-> ' + JSON.stringify(data, null, 2));
-  //   // 먼저 예약 데이터를 집계
-  //   const result = data.reduce((result, reservation) => {
-  //     const { date, tableType, peopleCount } = reservation;
-  //     const formattedDate = new Date(date).toISOString().split("T")[0];
-  //     // 날짜 키가 없으면 초기화
-  //     if (!result[formattedDate]) {
-  //       result[formattedDate] = {
-  //         홀: { remaining: hallLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
-  //         룸: { remaining: roomLimit, booked: 0 }, // 남은 예약 수량과 예약된 수량 초기화
-  //       };
-  //     }
-
-  //     // 테이블 유형에 따라 값 업데이트
-  //     if (tableType === "홀" || tableType === "룸") {
-  //       result[formattedDate][tableType].booked += 1;
-  //       result[formattedDate][tableType].remaining -= 1;
-  //     }
-
-  //     //console.log('result22-> ' + JSON.stringify(result, null, 2));
-  
-  //     return result;
-  //   }, {});
-
-  //   const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
-
-  //   // 리듀스가 끝난 후 남은 인원 수량 계산
-  //   for (const date in result) {
-  //     if (result[date].홀) {
-  //       // 홀의 경우, 예약된 수량을 4명씩 계산하여 남은 인원 수량 계산
-  //       result[date].홀.remainingPeople = (hallLimit - result[date].홀.booked) * 4;
-  //     }
-
-  //     if (result[date].룸) {
-  //       // 룸의 경우, 예약된 수량을 8명씩 계산하여 남은 인원 수량 계산
-  //       result[date].룸.remainingPeople = remainingRoomCapacity[date].remainingPeople;
-  //     }
-  //   }
-    
-  //   return result;
-  // };
 
   // //예약마감된 날짜로 만들기
   useEffect(() => {
     // 결과 생성
     const result = groupByDateWithCounts(data);
-    
+
+    //룸 총 수량
+    dispatch(fetchRoomTypes());
+
+    //홀 총 수량
+    dispatch(fetchHallTypes());
 
     // 객체를 배열 형식으로 변환 (옵션)
     const formattedResult = Object.entries(result).map(([date, data]) => ({
@@ -524,19 +472,21 @@ const ReservationForm = () => {
     //console.log('excludedDates-> ' + excludedDates);
 
     
-  }, [data, peopleCount, tableType, reservationDate]); 
+  }, [data, peopleCount, tableType, reservationDate, dispatch]); 
 
   useEffect(() => {
     // 테이블 타입이 변경될 때 상태 초기화
     setValue('peopleCount', ''); // 인원 수 초기화
     setValue('reservationDate', null); // 예약 날짜 초기화
     setValue('reservationTime', ''); // 예약 시간 초기화
+    setValue('menu', ''); // 메뉴 초기화
   }, [tableType, setValue]);
 
   useEffect(() => {
     // 테이블 타입이 변경될 때 상태 초기화
     setValue('reservationDate', null); // 예약 날짜 초기화
     setValue('reservationTime', ''); // 예약 시간 초기화
+    setValue('menu', ''); // 메뉴 초기화
   }, [peopleCount, setValue]);
  
   const onSubmit = ({ affiliation, rank, name, contact1, contact2, contact3, tableType, peopleCount, menu, reservationDate, reservationTime }) => {
@@ -675,12 +625,23 @@ const ReservationForm = () => {
           {...register('peopleCount', { 
             required: '인원 수를 선택해주세요',
           })}
-          disabled={!watch("tableType")}  // 테이블을 선택하기 전에는 비활성화
+          disabled={!watch("tableType")} // 테이블을 선택하기 전에는 비활성화
         >
           <option value="">선택...</option>
-          {[...Array(30)].map((_, i) => (
-            <option key={i + 1} value={i + 1}>{i + 1}명</option>
-          ))}
+          {watch("tableType") === "홀" &&
+            [...Array(hallLimit * 4)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1}명
+              </option>
+            ))
+          }
+          {watch("tableType") === "룸" &&
+            [...Array(roomMaxPeople)].map((_, i) => (
+              <option key={i + 1} value={i + 1}>
+                {i + 1}명
+              </option>
+            ))
+          }
         </Select>
         {errors.peopleCount && <ErrorMessage>{errors.peopleCount.message}</ErrorMessage>}
 

@@ -84,7 +84,7 @@ export const fetchReservationList = createAsyncThunk(
     }
 );
 
-// 룸/홀 종류 조회
+// 룸 종류 조회
 export const fetchRoomTypes = createAsyncThunk(
     'reservation/fetchRoomTypes',
     async (_, thunkAPI) => {
@@ -97,6 +97,25 @@ export const fetchRoomTypes = createAsyncThunk(
         return response.data; // 서버에서 반환된 데이터를 Redux 상태에 저장
       } catch (err) {
         console.error('Error fetching room types:', err);
+        // 오류 상태 반환
+        return thunkAPI.rejectWithValue(err.response?.data || err.message);
+      }
+    }
+  );
+
+  // 홀 종류 조회
+export const fetchHallTypes = createAsyncThunk(
+    'reservation/fetchHallTypes',
+    async (_, thunkAPI) => {
+      try {
+        // GET 요청을 보냄
+        const response = await axiosInstance.post('/reservations/fetchHallTypes', { 
+           
+        });  
+        //console.log(JSON.stringify(response, null, 2)); 
+        return response.data; // 서버에서 반환된 데이터를 Redux 상태에 저장
+      } catch (err) {
+        console.error('Error fetching hall types:', err);
         // 오류 상태 반환
         return thunkAPI.rejectWithValue(err.response?.data || err.message);
       }
