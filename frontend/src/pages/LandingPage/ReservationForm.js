@@ -217,6 +217,7 @@ const ReservationForm = () => {
   const { reservations = [],  } = useSelector((state) => state.reservation || {});
   const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
   const hallTypes = useSelector((state) => state.reservation.hallTypes || []);
+  const roomData = useSelector((state) => state.reservation.roomTypes || []);
   const { register, handleSubmit, control, formState: { errors }, reset, setValue,watch,trigger  } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -241,6 +242,7 @@ const ReservationForm = () => {
   const [peopleCount, setPeopleCount] = useState('');
   const [hallLimit, setHallLimit] = useState(0); //홀 테이블 총 수량
   const [roomMaxPeople, setRoomMaxPeople] = useState(0);
+  const [autoRoomType, setAutoRoomType] = useState('');
 
   //예약마감된 일자
   const [excludedDates, setExcludedDates] = useState([]);
@@ -365,15 +367,15 @@ const ReservationForm = () => {
     return result;
   };
 
-
-  const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
-  //console.log(remainingRoomCapacity);
-
   const data = reservations;
 
   const groupByDateWithCounts = (data) => {
     const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
-    //console.log('data-> ' + JSON.stringify(data, null, 2));
+    // console.log('roomTypes-> ' + JSON.stringify(roomTypes, null, 2));
+    // console.log('remainingRoomCapacity-> ' + JSON.stringify(remainingRoomCapacity, null, 2));
+    //alert('remainingRoomCapacity === 0-> '+  JSON.stringify(remainingRoomCapacity, null, 2));
+    
+
     // 먼저 예약 데이터를 집계
     // 예약 데이터를 집계
     const result = data.reduce((result, reservation) => {
@@ -416,7 +418,6 @@ const ReservationForm = () => {
   }, {});
 
     //console.log('result-> ' + JSON.stringify(result, null, 2));
-
     return result;
   };
 
@@ -431,6 +432,7 @@ const ReservationForm = () => {
 
     //홀 총 수량
     dispatch(fetchHallTypes());
+
 
     // 객체를 배열 형식으로 변환 (옵션)
     const formattedResult = Object.entries(result).map(([date, data]) => ({
@@ -488,66 +490,204 @@ const ReservationForm = () => {
     setValue('reservationTime', ''); // 예약 시간 초기화
     setValue('menu', ''); // 메뉴 초기화
   }, [peopleCount, setValue]);
+
+  const assignAutoRoomType = (reservationDate, peopleCount) => {
+    // reservationDate를 한국 표준시(KST) 기준으로 'YYYY-MM-DD' 형식으로 변환
+    const formattedDate = reservationDate.toLocaleDateString("en-CA"); // 'en-CA'는 ISO 형식 출력
+  
+    // remainingRoomCapacity 가져오기
+    const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
+
+    //console.log('remainingRoomCapacity -> ' + JSON.stringify(remainingRoomCapacity, null, 2));
+  
+    // 예약 데이터와 remainingRooms 처리
+    let availableRooms;
+    if (!remainingRoomCapacity[formattedDate]) {
+      // 일치하는 날짜가 없는 경우 모든 방을 포함
+      availableRooms = roomTypes.map((room) => room.name);
+    } else if ( //남은 룸이 없는 경우
+      !remainingRoomCapacity[formattedDate].remainingRooms || 
+      remainingRoomCapacity[formattedDate].remainingRooms.length === 0
+    ) {
+      // 일치하는 날짜가 있지만 remainingRooms가 없는 경우
+      setAutoRoomType("미지정");
+      //alert("remainingRooms가 없어서 미지정으로 설정됩니다.");
+      return "미지정"; // 예약이 꽉찬상태
+    } else {
+      // remainingRooms가 있는 경우
+      availableRooms = remainingRoomCapacity[formattedDate].remainingRooms;
+    }
+    //console.log('availableRooms -> ' + JSON.stringify(availableRooms, null, 2));
+    //alert('availableRooms -> ' + JSON.stringify(availableRooms, null, 2));
+  
+    // peopleCount가 minPeople과 maxPeople 범위 내에 있는 방 필터링
+    const filteredRooms = roomData
+      .filter((room) => availableRooms.includes(room.name)) // 예약 가능한 방인지 확인
+      .filter((room) => room.minPeople <= peopleCount && peopleCount <= room.maxPeople);
+
+
+    //룸은 있지만 선택한 인원과 해당하지 않은 방들만 있는 경우
+    if (filteredRooms.length === 0) {
+      //alert('미지정 ');
+
+      const filteredRooms2 = roomData
+      .filter((room) => availableRooms.includes(room.name)) // 예약 가능한 방인지 확인
+
+      const minPeople = Math.min(...filteredRooms2.map((room) => room.minPeople));
+      const maxPeople = Math.max(...filteredRooms2.map((room) => room.maxPeople));
+
+      // 결과 객체 생성
+      const result = {
+        minPeople,
+        maxPeople,
+        peopleCount,
+      };
+
+      //alert("Result Object:" + JSON.stringify(result, null, 2));
+
+      return result;
+    }
+
+    //console.log('filteredRooms -> ' + JSON.stringify(filteredRooms, null, 2));
+  
+    // maxPeople 값이 가장 작은 방 선택
+    const optimalRoom = filteredRooms.reduce((prev, curr) =>
+      curr.maxPeople < prev.maxPeople ? curr : prev
+    );
+  
+    //alert('optimalRoom.name-> ' + optimalRoom.name);
+  
+    setAutoRoomType(optimalRoom.name);
+    return optimalRoom.name; // 상태 대신 값 반환
+  };
  
   const onSubmit = ({ affiliation, rank, name, contact1, contact2, contact3, tableType, peopleCount, menu, reservationDate, reservationTime }) => {
     
     const fullContact = `${contact1}-${contact2}-${contact3}`;
 
-     // 예약일자를 'yyyy-MM-dd' 형식으로 변환
-    let formattedDate = '';
-    if (reservationDate) {
-      const newDate = new Date(reservationDate);
-      newDate.setDate(newDate.getDate() + 1); // +1일을 추가
-      formattedDate = newDate.toISOString().split('T')[0]; // 'yyyy-MM-dd' 형식으로 변환
+    let autoRoomTypeValue = "";
+    if (tableType === "룸") {
+      //alert('tableType-> ' + tableType);
+      autoRoomTypeValue = assignAutoRoomType(reservationDate, peopleCount);
     }
 
-      // menu가 문자열인 경우, 쉼표(,)를 기준으로 나누어 배열로 변환
-      let processedMenu = [];
-      if (typeof menu === 'string') {
-        processedMenu = menu.split(',').map(item => item.trim()); // 쉼표로 나누고 공백 제거
-      } else if (Array.isArray(menu)) {
-        processedMenu = menu; // 이미 배열이라면 그대로 사용
-      }
+    // 객체인지 확인(객체이면 룸은 남아있지만 선택한 인원과 남아있는 룸의 최소 최대 인원과 일치하지 않은 상황)
+    // 팝업창으로 "현재 룸은 최대 몇명, 최소 몇명 예약인 가능한 상태이다" 라고 알려줘야 함
+    if (autoRoomTypeValue !== null && typeof autoRoomTypeValue === "object") {
+        // autoRoomTypeValue가 객체일 경우
+   // console.log('autoRoomTypeValue는 객체입니다:', autoRoomTypeValue);
 
-  
-    let body = {
-      affiliation,
-      rank,
-      name,
-      contact: fullContact,
-      tableType,
-      peopleCount,
-      menu: processedMenu, // 배열로 변환된 메뉴
-      date: formattedDate,
-      time: reservationTime,
-      status: '예약',
-     
-    };
-  
-    dispatch(createReservation(body))
-      .then(() => {
-        reset({
-          affiliation: '',
-          rank: '',
-          name: '',
-          contact1: '',
-          contact2: '',
-          contact3: '',
-          tableType: '',
-          peopleCount: '',
-          menu: [],
-          reservationDate: null,  // 날짜 필드는 null로 리셋
-          reservationTime: ''
-        });
+    const { minPeople, maxPeople, peopleCount } = autoRoomTypeValue;
 
-        // 성공적으로 생성 후 navigate 호출
-        navigate('/reservationList', {
-          state: { searchName: name, searchContact: fullContact }
-        });
-      })
-      .catch((error) => {
-        toast.error('예약 실패. 다시 시도해 주세요.');
+    // 팝업 메시지 생성
+    const message = `현재 룸은 최소 ${minPeople}명, 최대 ${maxPeople}명 예약이 가능한 상태입니다.\n 현재 예약 인원은 ${peopleCount}명입니다.
+                    \n 인원 수를 다시 선택해주세요`;
+
+    // 팝업창 표시 (디자인에 맞게 스타일을 설정)
+    const popup = document.createElement('div');
+    popup.style.position = 'fixed';
+    popup.style.top = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.backgroundColor = '#fff';
+    popup.style.padding = '20px';
+    popup.style.border = '1px solid #ccc';
+    popup.style.boxShadow = '0px 4px 8px rgba(0, 0, 0, 0.2)';
+    popup.style.zIndex = '9999';
+    popup.style.textAlign = 'center';
+
+    // 팝업 메시지 설정
+    const messageElement = document.createElement('p');
+    messageElement.innerText = message;
+    messageElement.style.fontSize = '16px';
+    messageElement.style.marginBottom = '20px';
+
+    // 팝업 닫기 버튼
+    const closeButton = document.createElement('button');
+    closeButton.innerText = '확인';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#007BFF';
+    closeButton.style.color = '#fff';
+    closeButton.style.border = 'none';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontSize = '16px';
+
+    // 팝업 닫기 기능 (확인 버튼 클릭 시 인원 수 초기화)
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(popup); // 팝업 제거
+        setValue('peopleCount', ''); // 인원 수 초기화
+    });
+
+    // 팝업에 메시지와 버튼 추가
+    popup.appendChild(messageElement);
+    popup.appendChild(closeButton);
+
+    // 팝업을 body에 추가
+    document.body.appendChild(popup);
+
+    // 팝업이 뜬 상태에서 이후 코드 실행을 막기 위해 리턴
+    return; // 팝업이 표시된 후, 저장 로직은 실행되지 않음
+  }
+
+
+  // 예약일자를 'yyyy-MM-dd' 형식으로 변환
+  let formattedDate = '';
+  if (reservationDate) {
+    const newDate = new Date(reservationDate);
+    newDate.setDate(newDate.getDate() + 1); // +1일을 추가
+    formattedDate = newDate.toISOString().split('T')[0]; // 'yyyy-MM-dd' 형식으로 변환
+  }
+
+    // menu가 문자열인 경우, 쉼표(,)를 기준으로 나누어 배열로 변환
+    let processedMenu = [];
+    if (typeof menu === 'string') {
+      processedMenu = menu.split(',').map(item => item.trim()); // 쉼표로 나누고 공백 제거
+    } else if (Array.isArray(menu)) {
+      processedMenu = menu; // 이미 배열이라면 그대로 사용
+    }
+
+
+  let body = {
+    affiliation,
+    rank,
+    name,
+    contact: fullContact,
+    tableType,
+    peopleCount,
+    menu: processedMenu, // 배열로 변환된 메뉴
+    date: formattedDate,
+    time: reservationTime,
+    status: '예약',
+    roomType: autoRoomTypeValue
+    
+  };
+
+  //alert('autoRoomType2-> ' + autoRoomType);
+
+  dispatch(createReservation(body))
+    .then(() => {
+      reset({
+        affiliation: '',
+        rank: '',
+        name: '',
+        contact1: '',
+        contact2: '',
+        contact3: '',
+        tableType: '',
+        peopleCount: '',
+        menu: [],
+        reservationDate: null,  // 날짜 필드는 null로 리셋
+        reservationTime: ''
       });
+
+      // 성공적으로 생성 후 navigate 호출
+      navigate('/reservationList', {
+        state: { searchName: name, searchContact: fullContact }
+      });
+    })
+    .catch((error) => {
+      toast.error('예약 실패. 다시 시도해 주세요.');
+    });
   };
 
 

@@ -121,8 +121,8 @@ function Dashboard(props) {
             icon: <BarChartIcon />,
           },
           {
-            segment: 'integrations',
-            title: 'Integrations',
+            segment: 'CalendarPage',
+            title: '캘린더',
             icon: <LayersIcon />,
           },
         ]

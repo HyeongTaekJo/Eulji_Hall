@@ -35,6 +35,7 @@ export const fetchReservations = createAsyncThunk(
     }
 );
 
+
 // 예약 수정
 export const updateReservation = createAsyncThunk(
     'reservation/updateReservation',

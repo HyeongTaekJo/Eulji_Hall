@@ -54,6 +54,7 @@ const reservationSchema = mongoose.Schema({
     enum: ['예약', '완료', '취소'], // 상태 값 제한
     default: '예약' // 기본값 설정
   },
+ 
 });
 
 // 예약 모델 생성

@@ -16,6 +16,7 @@ import Dashboard from './layout/Dashboard/Dashboard';
 import ReservationListPage from './pages/ReservationListPage/ReservationListPage';
 import ReservationSearchPage from './pages/ReservationSearchPage/ReservationSearchPage';
 import ReservationListGridPage from './pages/ReservationListGridPage/ReservationListGridPage';
+import CalendarPage from './pages/CalendarPage/CalendarPage';
 
 function Layout() {
   return(  //flex-col은 Navbar, main, Footer가 세로로 한줄씩 된다 수직, 가로 축이 바뀜
@@ -64,6 +65,7 @@ function App() {
         <Route element={<ProtectedRoutes isAuth={isAuth}/>}>
           {/* <Route path="/protected" element={<ProtectedPage />} /> */}
           <Route path="/ReservationListGridPage" element={<ReservationListGridPage/>}/>
+          <Route path="/CalendarPage" element={<CalendarPage/>}/>
         </Route>
 
         {/* 로그인한 사람은 갈 수 없는 경로 */}
