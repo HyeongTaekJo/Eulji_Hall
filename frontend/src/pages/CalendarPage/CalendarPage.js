@@ -1,116 +1,306 @@
-import React, { useState } from 'react';
-import { Box, Typography, Grid, Paper, Button, Divider } from '@mui/material';
-import dayjs from 'dayjs';
+// src/components/Calendar.js
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  addMonths,
+  subMonths,
+} from "date-fns";
+import { ko } from "date-fns/locale";
+import styled from "styled-components";
+import { fetchHallTypes, fetchReservations, fetchRoomTypes } from "../../store/reservationThunks";
 
-const CalendarPage = () => {
-  // 현재 날짜 상태
-  const [selectedDate, setSelectedDate] = useState(dayjs());
-  
-  // 각 날짜에 표시할 데이터를 저장하는 객체 (예시)
-  const [data, setData] = useState({
-    '2024-11-22': ['이벤트 1', '이벤트 2'],
-    '2024-11-23': ['이벤트 3'],
-    '2024-11-25': ['이벤트 4', '이벤트 5'],
-  });
+// 스타일 컴포넌트
+const CalendarWrapper = styled.div`
+  width: 100%;
+  height: auto; /* 화면 높이를 100%로 설정 */
+  max-width: 2000px;
+  margin: 0 auto;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  font-family: "Arial", sans-serif;
+`;
 
-  // 날짜 선택 핸들러
-  const handleDateChange = (newDate) => {
-    setSelectedDate(newDate);
-  };
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  font-size: 2rem;
+  font-weight: bold;
+`;
 
-  // 해당 날짜의 데이터를 가져오는 함수
-  const getDataForDate = (date) => {
-    return data[date] || [];
-  };
+const Button = styled.button`
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
 
-  // 월 첫날을 기준으로 시작하는 캘린더 생성
-  const startOfMonth = selectedDate.startOf('month');
-  const endOfMonth = selectedDate.endOf('month');
+  &:hover {
+    background-color: #0056b3;
+  }
+`;
 
-  // 월에 해당하는 날짜들 배열
-  const daysInMonth = [];
-  for (let i = startOfMonth.date(); i <= endOfMonth.date(); i++) {
-    const currentDate = dayjs(selectedDate).date(i).format('YYYY-MM-DD');
-    daysInMonth.push(currentDate);
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  text-align: center;
+`;
+
+const Day = styled.div`
+  padding: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+`;
+
+const DateBox = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isCurrentMonth',
+})`
+  padding: 10px;
+  height: calc(100vh / 7 - 20px); /* 반응형 높이 계산 */
+  border: 1px solid #ddd;
+  background-color: ${(props) => (props.isCurrentMonth ? "white" : "#f0f0f0")};
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  transition: background-color 0.3s;
+
+  font-size: 1rem; /* 날짜 숫자 크기 증가 */
+  font-weight: bold; /* 숫자 강조 */
+
+  &:hover {
+    background-color: #e9ecef;
   }
 
-  // 월을 시작하는 첫 번째 날짜의 요일을 계산
-  const startDayOfWeek = startOfMonth.day();
+  & > div {
+    margin-top: 5px;
+    font-size: 0.8rem;
+    color: #007bff;
+    text-align: center;
+  }
+`;
+
+const Calendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const { reservations = [],  } = useSelector((state) => state.reservation || {});
+  const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
+  const hallTypes = useSelector((state) => state.reservation.hallTypes || []);
+  const [roomMaxPeople, setRoomMaxPeople] = useState(0);
+  const [data, setData] = useState({
+    "2024-11-23": ["미팅", "할 일 1"],
+    "2024-11-25": ["워크샵", "프로젝트 리뷰"],
+  });
+
+  const dispatch = useDispatch();
+
+  const [hallLimit, setHallLimit] = useState(0); //홀 테이블 총 수량
+
+  useEffect(() => {
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 구하기
+    const today = new Date();
+    
+    // 로컬 시간 기준으로 날짜 포맷팅
+    const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    // startDate로 오늘 날짜 전달
+    dispatch(fetchReservations({ startDate: formattedDate })).then(() => {
+      // 성공적인 호출 후 추가 작업
+    });
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchRoomTypes());
+    //console.log('Room types fetched successfully');
+    //console.log(JSON.stringify(roomTypes, null, 2)); 
+
+    // `isAvailable`이 true인 항목 필터링 후 `maxPeople` 값 중 가장 큰 값 찾기
+    const maxPeople = roomTypes
+      .filter((room) => room.isAvailable && room.maxPeople !== undefined)
+      .reduce((max, room) => Math.max(max, room.maxPeople), 0);
+
+    setRoomMaxPeople(maxPeople); // 상태 업데이트
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchHallTypes());
+    setHallLimit(hallTypes.length);
+    //console.log(JSON.stringify(hallTypes, null, 2)); 
+  }, [dispatch, hallTypes.length]);
+
+  const calculateRemainingRoomCapacity = (reservations, roomTypes) => {
+    // 날짜별로 데이터를 그룹화하기 위한 결과 객체 초기화
+    const result = {};
+  
+    // "예약" 상태인 데이터만 필터링
+    const filteredReservations = reservations.filter((reservation) => reservation.status === "예약");
+  
+    filteredReservations.forEach((reservation) => {
+      const { date, roomType, peopleCount, tableType } = reservation;
+      const formattedDate = new Date(date).toISOString().split("T")[0]; // 날짜를 YYYY-MM-DD 형식으로 변환
+  
+      // 해당 날짜가 result 객체에 없으면 초기화
+      if (!result[formattedDate]) {
+        result[formattedDate] = {
+          remainingPeople: 0, // 남아 있는 방들의 최대 수용 인원 합계
+          bookedRooms: [], // 해당 날짜에 예약된 방 이름 목록
+          remainingTables: hallLimit, // 남아있는 홀 테이블 수
+          remainingRooms: [], // 남아있는 룸 목록
+          minRoomPeople: Infinity, // 남아있는 룸의 최소 인원 (최소값 초기화)
+          maxRoomPeople: 0, // 남아있는 룸의 최대 인원 (최대값 초기화)
+          totalRemainingRooms: 0,  // 남아있는 방 수 추가
+          remainingHallPeople: 0, // 남아있는 홀의 총 인원 수
+          totalBookedTables: 0, // 예약된 총 홀 테이블 수
+          totalBookedRooms: 0, // 예약된 총 룸 수량
+          totalBookedHallPeople: 0, // 예약된 홀 인원 수
+          totalBookedRoomPeople: 0, // 예약된 룸 인원 수
+        };
+      }
+  
+      // 예약된 방 추가, undefined 값 제외
+      if (roomType && roomType !== "미지정") {
+        result[formattedDate].bookedRooms.push(roomType);
+        result[formattedDate].totalBookedRooms += 1; // 예약된 룸 수량 증가
+        result[formattedDate].totalBookedRoomPeople += peopleCount; // 룸 예약된 인원 수 증가
+      }
+
+      // 홀 예약인 경우 테이블 수 계산 (1개 테이블은 4명 수용)
+      if (tableType === "홀") {
+        const tablesNeeded = Math.ceil(peopleCount / 4); // 필요한 테이블 수 계산
+        result[formattedDate].totalBookedTables += tablesNeeded; // 예약된 총 홀 테이블 수량 증가
+        result[formattedDate].totalBookedHallPeople += peopleCount; // 홀 예약된 인원 수 증가
+        
+        // 남아있는 테이블 수가 부족할 경우 차감을 방지하도록 조건 추가
+        if (result[formattedDate].remainingTables >= tablesNeeded) {
+          result[formattedDate].remainingTables -= tablesNeeded;
+        } else {
+          // 남은 테이블 수가 부족하면 0으로 설정
+          result[formattedDate].remainingTables = 0;
+        }
+      }
+    });
+  
+    // 날짜별로 방 데이터를 처리하여 남은 수용 인원을 계산
+    Object.keys(result).forEach((date) => {
+      const bookedRooms = result[date].bookedRooms;
+  
+      // 해당 날짜에 이미 예약된 방을 제외한 나머지 방 목록 필터링 (isAvailable가 true인 방만 포함)
+      const remainingRooms = roomTypes.filter(
+        (room) => room.isAvailable && room.name !== "미지정" && !bookedRooms.includes(room.name)
+      );
+  
+      // 남아 있는 방들의 maxPeople 값을 합산
+      result[date].remainingPeople = remainingRooms.reduce((sum, room) => {
+        result[date].minRoomPeople = Math.min(result[date].minRoomPeople, room.minPeople); // 최소 인원 업데이트
+        result[date].maxRoomPeople = Math.max(result[date].maxRoomPeople, room.maxPeople); // 최대 인원 업데이트
+        return sum + (room.maxPeople || 0); // maxPeople 값이 없으면 기본값으로 0 사용
+      }, 0);
+  
+      // 남아 있는 룸들의 정보를 업데이트 (minimum과 maximum 인원 값)
+      result[date].remainingRooms = remainingRooms.map(room => room.name);
+
+      // 추가: 남아 있는 방 수 합계 계산
+      result[date].totalRemainingRooms = remainingRooms.length;
+
+      // 홀의 남은 인원 수 계산 (각 테이블은 4명 수용)
+      result[date].remainingHallPeople = result[date].remainingTables * 4;
+    });
+  
+    return result;
+};
+
+useEffect(() => {
+  const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
+
+  const newData = Object.keys(remainingRoomCapacity).reduce((acc, date) => {
+    const roomData = remainingRoomCapacity[date];
+
+    const bookedRoomsCount = roomData.totalBookedRooms;
+    const bookedHallTablesCount = roomData.totalBookedTables;
+    const bookedRoomPeople = roomData.totalBookedRoomPeople;
+    const bookedHallPeople = roomData.totalBookedHallPeople;
+
+    const roomInfo = `룸 : ${bookedRoomsCount}팀 (총 : ${bookedRoomPeople}명)`;
+    const hallInfo = `홀 : ${bookedHallTablesCount}팀 (총 : ${bookedHallPeople}명)`;
+
+    acc[date] = [roomInfo, hallInfo];
+    return acc;
+  }, {});
+
+  setData(newData);
+}, [reservations, roomTypes, hallTypes]);  // 예약 데이터나 룸 타입이 변경될 때마다 실행
+
+
+  const renderHeader = () => {
+    return (
+      <Header>
+        <Button onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+          이전
+        </Button>
+        {format(currentDate, "yyyy년 MM월", { locale: ko })}
+        <Button onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+          다음
+        </Button>
+      </Header>
+    );
+  };
+
+  const renderDays = () => {
+    const days = ["일", "월", "화", "수", "목", "금", "토"];
+    return days.map((day) => <Day key={day}>{day}</Day>);
+  };
+
+  const renderDates = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const weekStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+
+    let day = weekStart;
+    const dates = [];
+
+    while (day <= weekEnd) {
+      const formattedDate = format(day, "yyyy-MM-dd");
+      const isCurrentMonth = format(day, "MM") === format(monthStart, "MM");
+
+      dates.push(
+        <DateBox key={day} isCurrentMonth={isCurrentMonth}>
+          {format(day, "d")}
+          {data[formattedDate] &&
+            data[formattedDate].map((item, idx) => (
+              <div key={idx}>{item}</div>
+            ))}
+        </DateBox>
+      );
+
+      day = addDays(day, 1);
+    }
+
+    return dates;
+  };
 
   return (
-    <Box sx={{ padding: 3 }}>
-      {/* 캘린더 헤더 */}
-      <Typography variant="h4" gutterBottom align="center">
-        캘린더 - {selectedDate.format('YYYY년 MMMM')}
-      </Typography>
-      
-      {/* 주차 헤더 (일, 월, 화, 수, 목, 금, 토) */}
-      <Grid container spacing={2} sx={{ marginBottom: 1 }}>
-        {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
-          <Grid item xs={1} key={index} align="center">
-            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'gray' }}>
-              {day}
-            </Typography>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* 날짜 그리드 */}
-      <Grid container spacing={2}>
-        {/* 이전 달 빈 공간 */}
-        {[...Array(startDayOfWeek)].map((_, index) => (
-          <Grid item xs={1} key={index}></Grid>
-        ))}
-        
-        {/* 날짜들 */}
-        {daysInMonth.map((day, index) => (
-          <Grid item xs={1.7} key={index}>
-            <Paper
-              sx={{
-                padding: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                cursor: 'pointer',
-                backgroundColor: selectedDate.isSame(dayjs(day), 'day') ? 'lightblue' : 'white',
-                borderRadius: 1,
-                boxShadow: 3,
-                transition: 'background-color 0.2s ease-in-out',
-                '&:hover': {
-                  backgroundColor: 'lightyellow',
-                },
-                height: '100%',
-              }}
-              onClick={() => setSelectedDate(dayjs(day))}
-            >
-              <Typography variant="body2" align="center" sx={{ fontWeight: 'bold', fontSize: 16 }}>
-                {dayjs(day).format('DD')}
-              </Typography>
-              {/* 해당 날짜의 데이터 표시 */}
-              <Box sx={{ marginTop: 1, textAlign: 'center' }}>
-                {getDataForDate(day).map((event, index) => (
-                  <Button
-                    key={index}
-                    sx={{
-                      fontSize: '10px',
-                      marginBottom: 0.5,
-                      padding: '2px 6px',
-                      backgroundColor: 'lightgray',
-                      '&:hover': {
-                        backgroundColor: 'lightblue',
-                      },
-                    }}
-                  >
-                    {event}
-                  </Button>
-                ))}
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+    <CalendarWrapper>
+      {renderHeader()}
+      <Grid>{renderDays()}</Grid>
+      <Grid>{renderDates()}</Grid>
+    </CalendarWrapper>
   );
 };
 
-export default CalendarPage;
+export default Calendar;

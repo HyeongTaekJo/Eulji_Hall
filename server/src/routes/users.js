@@ -80,4 +80,61 @@ router.post('/logout',auth, async(req, res, next) => { //auth 미들웨어를 �
 });
 
 
+// 비밀번호 찾기
+router.post('/findPassword', async (req, res, next) => {
+    try {
+        const { searchId, searchName } = req.body;
+
+        console.log("searchId->" + searchId);
+        console.log("searchName->" + searchName);
+
+        // 사용자 정보 검증
+        const user = await User.findOne({
+            name: searchName, // 이름 필드
+            email: searchId   // 이메일 필드
+        });
+
+        console.log("user->", user);
+
+        if (!user) {
+            return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+        }
+
+        return res.json(user)
+    } catch (error) {
+        console.error("Error finding user:", error);
+        next(error);
+    }
+});
+  
+  //비밀번호 변경
+  router.post('/changePassword', async (req, res, next) => {
+    try {
+        const { password, id } = req.body; 
+
+         // 사용자 조회
+         const user = await User.findOne({
+            email: id   // 이메일 필드
+        });
+         if (!user) {
+             return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+         }
+
+        //비밀번호가 올바른 것인지 체크
+        const isMatch = await user.comparePassword(password); //comparePassword는 모델에 있는 거
+        if(isMatch){
+            return res.status(400).send("기존 비밀번호와 동일합니다.");
+        }
+
+         // 비밀번호 업데이트
+         user.password = password; // 비밀번호 필드 업데이트 (필드명이 `password`라고 가정)
+         await user.save(); // 변경 사항 저장
+ 
+         return res.status(200).json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+
 module.exports = router;

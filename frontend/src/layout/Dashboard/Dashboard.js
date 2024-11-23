@@ -9,6 +9,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LayersIcon from '@mui/icons-material/Layers';
+import EventIcon from '@mui/icons-material/Layers';
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -18,12 +19,12 @@ import { authUser, logoutUser } from '../../store/thunkFunctions';
 const BRANDING = {
   logo: (
     <img
-      src={`${process.env.PUBLIC_URL}/joyfactory_ci.png`}
+      src={`${process.env.PUBLIC_URL}/mark.jpg`}
       alt="mark logo"
-      style={{ width: '150px', height: 'auto' }}
+      style={{ width: 'auto', height: '120px' }}
     />
   ),
-  title: '',
+  title: '을지회관',
 };
 
 const demoTheme = createTheme({
@@ -89,12 +90,12 @@ function Dashboard(props) {
     {
       segment: '',
       title: '예약하기',
-      icon: <DateRangeIcon />,
+      icon: <EventIcon  />,
     },
     {
       segment: 'reservationSearch',
       title: '예약내역 확인',
-      icon: <HistoryIcon />,
+      icon: <HistoryIcon  />,
     },
     // ...(isAuth
     //   ? [] // isAuth가 true일 경우 '회원가입' 메뉴는 표시하지 않음
@@ -118,13 +119,14 @@ function Dashboard(props) {
           {
             segment: 'ReservationListGridPage',
             title: '예약내역 조회',
-            icon: <BarChartIcon />,
+            icon: <HistoryIcon   />,
           },
           {
             segment: 'CalendarPage',
             title: '캘린더',
-            icon: <LayersIcon />,
+            icon: <DateRangeIcon />,
           },
+          
         ]
       : []),
   ];

@@ -373,7 +373,7 @@ const ReservationForm = () => {
     const remainingRoomCapacity = calculateRemainingRoomCapacity(reservations, roomTypes);
     // console.log('roomTypes-> ' + JSON.stringify(roomTypes, null, 2));
     // console.log('remainingRoomCapacity-> ' + JSON.stringify(remainingRoomCapacity, null, 2));
-    //alert('remainingRoomCapacity === 0-> '+  JSON.stringify(remainingRoomCapacity, null, 2));
+    // alert('remainingRoomCapacity === 0-> '+  JSON.stringify(remainingRoomCapacity, null, 2));
     
 
     // 먼저 예약 데이터를 집계
@@ -706,7 +706,7 @@ const ReservationForm = () => {
   
   return (
     <FormContainer>
-      <Title>예약 시스템</Title>
+      <Title>예약하기</Title>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Label>소속:</Label>

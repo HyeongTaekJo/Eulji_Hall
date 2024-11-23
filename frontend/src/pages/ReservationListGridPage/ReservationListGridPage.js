@@ -38,7 +38,6 @@ const getTodayInKST = () => {
 const ReservationListGridPage = () => {
   const dispatch = useDispatch();
   const { reservations = [],  } = useSelector((state) => state.reservation || {});
-  const { reservations2 = [],  } = useSelector((state) => state.reservation || {});
   const roomTypes = useSelector((state) => state.reservation.roomTypes || []);
   const [currentPage, setCurrentPage] = useState(0);
   const [startDate, setStartDate] = useState(getTodayInKST()); // 오늘 날짜
@@ -101,13 +100,13 @@ const ReservationListGridPage = () => {
 
   //저장
   const handleSave = (id, date) => {
-    console.log('id-> ' + id);
-    console.log('date-> ' + date);
+    // console.log('id-> ' + id);
+    // console.log('date-> ' + date);
 
-    console.log('reservations-> ' , JSON.stringify(reservations,null, 2));
+    // console.log('reservations-> ' , JSON.stringify(reservations,null, 2));
 
     const modifiedData = modifiedReservations[id];
-    console.log('modifiedData-> ' , JSON.stringify(modifiedData,null, 2));
+    //console.log('modifiedData-> ' , JSON.stringify(modifiedData,null, 2));
 
     // date와 일치하는 예약들을 찾고, 해당 예약들의 roomType을 배열로 추출
     const matchingReservations = reservations
@@ -117,7 +116,7 @@ const ReservationListGridPage = () => {
         const filterTableType = modifiedData.tableType || "룸";
         const filterStatus = modifiedData.status || "예약";
 
-        console.log('filterDate-> ' , JSON.stringify(filterDate,null, 2));
+        //console.log('filterDate-> ' , JSON.stringify(filterDate,null, 2));
 
         return (
           res.date === filterDate &&
@@ -130,7 +129,7 @@ const ReservationListGridPage = () => {
     // 조건에 맞는 예약이 없으면 빈 문자열로 설정
     const result = matchingReservations.length > 0 ? matchingReservations : "";
 
-    console.log('result length-> ' , JSON.stringify(result,null, 2));
+    //console.log('result length-> ' , JSON.stringify(result,null, 2));
 
 
     if( result.length !== 0 && modifiedData.roomType ){
@@ -140,7 +139,7 @@ const ReservationListGridPage = () => {
 
       const displayDate = modifiedData.date || date;
 
-      console.log('modifiedData.date -> ' + modifiedData.date )
+      //console.log('modifiedData.date -> ' + modifiedData.date )
 
       const now = displayDate;
       const koreanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
@@ -267,11 +266,7 @@ const ReservationListGridPage = () => {
     });
 
     return filteredReservations.slice(start, end).map((row) => {
-      const formattedDate = new Date(row.date).toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).replace(/\./g, '');
+      
 
       const modifiedRow = modifiedReservations[row._id] || {};
       const isModified = modifiedRow.isModified;

@@ -30,7 +30,7 @@ const BRANDING = {
       style={{ height: '130px', width: 'auto' }} // 높이는 80px, 너비는 자동으로 조정
     />
   ),
-  title: 'MUI',
+  title: '',
 };
 // preview-end
 
@@ -128,7 +128,7 @@ function SignUpLink() {
 
 function ForgotPasswordLink() {
   return (
-    <Link href="/" variant="body2">
+    <Link href="/findPassword" variant="body2">
       비밀번호 찾기
     </Link>
   );
@@ -138,7 +138,6 @@ const LoginPage = () => {
   const theme = useTheme();
 
   const { 
-    register, 
     handleSubmit, //확인 버튼 눌렀을 때 실행되는 것
     formState : {errors}, //유효성 검사가 실패한 부분에 에러가 담긴다.
     reset // 모든 입력값 리셋
