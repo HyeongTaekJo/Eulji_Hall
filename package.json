@@ -10,10 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@babel/runtime": "^7.26.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@mui/material": "^6.1.5",
     "concurrently": "^8.2.2",
+    "date-fns": "^4.1.0",
     "react-datepicker": "^7.5.0"
   }
 }
