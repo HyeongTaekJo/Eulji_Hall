@@ -8,7 +8,15 @@ dotenv.config();
 const port = 5000;
 const app = express();
 
-app.use(cors());
+// CORS 처리
+const corsOptions = {
+    origin: '*', //프론트엔드 3000요청 허용
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"], // 허용할 헤더
+  };
+
+app.use(cors(corsOptions
+));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
