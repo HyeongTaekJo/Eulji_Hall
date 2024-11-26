@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const port = 6666;
+const port = 5000;
 const app = express();
 
 // CORS 처리
